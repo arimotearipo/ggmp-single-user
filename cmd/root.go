@@ -4,8 +4,17 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/arimotearipo/ggmp/queries"
 	"github.com/spf13/cobra"
 )
+
+var q *queries.Queries
+var username string;
+var password string;
+
+func SetQueries(_q *queries.Queries) {
+	q = _q
+}
 
 var rootCmd = &cobra.Command{
 	Use: "ggmp",

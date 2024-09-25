@@ -1,9 +1,10 @@
 package cmd
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/spf13/cobra"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var signInCmd = &cobra.Command{
@@ -11,13 +12,21 @@ var signInCmd = &cobra.Command{
 	Short: "Signin to the application",
 	Args: cobra.ExactArgs(0),
 	Run: func (cmd *cobra.Command, args []string)  {
-		fmt.Printf("Signing in with username %s and password %s\n", fUsername, fPassword)
+		hashedPassword := q.SignInAccount(username)
+
+		err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+
+		if err != nil {
+			log.Fatal("Incorrect password")
+		}
+
+		log.Println("Successfully logged in")
 	},
 }
 
 func init() {
-	signInCmd.Flags().StringVarP(&fUsername, "username", "u", "", "Your username")
-	signInCmd.Flags().StringVarP(&fPassword, "password", "p", "", "Your master password")
+	signInCmd.Flags().StringVarP(&username, "username", "u", "", "Your username")
+	signInCmd.Flags().StringVarP(&password, "password", "p", "", "Your master password")
 
 	rootCmd.AddCommand(signInCmd)
 }

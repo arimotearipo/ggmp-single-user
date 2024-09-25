@@ -1,32 +1,29 @@
 package cmd
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
-	"fmt"
+	"log"
 
 	"github.com/spf13/cobra"
+	"golang.org/x/crypto/bcrypt"
 )
-
-var fUsername string
-var fPassword string
 
 var registerCmd = &cobra.Command{
 	Use: "register",
 	Short: "Create a new account",
 	Run: func (cmd *cobra.Command, args []string)  {
-		hash := sha256.New()
-		hash.Write([]byte(fPassword))
+		bytes, err := bcrypt.GenerateFromPassword([]byte(password), 10)
 
-		hashedPassword := hex.EncodeToString(hash.Sum(nil))
+		if err != nil {
+			log.Fatal("Fail to generate password hash")
+		}
 
-		fmt.Println(hashedPassword)
+		q.RegisterAccount(username, string(bytes))
 	},
 }
 
 func init() {
-	registerCmd.Flags().StringVarP(&fUsername, "username", "u", "", "Your username")
-	registerCmd.Flags().StringVarP(&fPassword, "password", "p", "", "Your master password")
+	registerCmd.Flags().StringVarP(&username, "username", "u", "", "Your username")
+	registerCmd.Flags().StringVarP(&password, "password", "p", "", "Your master password")
 
 
 	rootCmd.AddCommand(registerCmd)
