@@ -54,3 +54,7 @@ func (d *Database) RegisterAccount(u string, h string) {
 
 	log.Println("Account registered")
 }
+
+func (d *Database) NewLogin(u string, h string) {
+	
+}
