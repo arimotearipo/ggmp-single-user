@@ -3,6 +3,7 @@ package encryption
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/rand"
 	"encoding/base64"
 	"log"
 	"os"
@@ -10,20 +11,14 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var initializationVector = []byte{35, 46, 57, 24, 85, 35, 24, 74, 87, 35, 88, 98, 66, 32, 14, 05}
+type Cryption struct {
+	InitalizationVector []byte
+	Block               cipher.Block
+	secret              string
+}
 
-func newAESCipherBlock() (cipher.Block, error) {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Couldn't load from .env file", err)
-	}
-
-	mySecret, ok := os.LookupEnv("MYSECRET")
-	if !ok {
-		log.Fatal("No MYSECRET found")
-	}
-
-	block, err := aes.NewCipher([]byte(mySecret))
+func newAESCipherBlock(secret string) (cipher.Block, error) {
+	block, err := aes.NewCipher([]byte(secret))
 
 	if err != nil {
 		return nil, err
@@ -32,26 +27,21 @@ func newAESCipherBlock() (cipher.Block, error) {
 	return block, nil
 }
 
-func Encode(b []byte) string {
+func encode(b []byte) string {
 	return base64.StdEncoding.EncodeToString(b)
 }
 
 // Encrypt method is to encrypt or hide any classified text
-func Encrypt(text, MySecret string) (string, error) {
-	block, err := newAESCipherBlock()
-	if err != nil {
-		return "", err
-	}
-
+func (c *Cryption) Encrypt(text string) (string, error) {
 	plainText := []byte(text)
-	cfb := cipher.NewCFBEncrypter(block, initializationVector)
+	cfb := cipher.NewCFBEncrypter(c.Block, c.InitalizationVector)
 	cipherText := make([]byte, len(plainText))
 	cfb.XORKeyStream(cipherText, plainText)
 
-	return Encode(cipherText), nil
+	return encode(cipherText), nil
 }
 
-func Decode(s string) []byte {
+func decode(s string) []byte {
 	data, err := base64.StdEncoding.DecodeString(s)
 	if err != nil {
 		panic(err)
@@ -60,16 +50,37 @@ func Decode(s string) []byte {
 }
 
 // Decrypt method is to extract back the encrypted text
-func Decrypt(text, MySecret string) (string, error) {
-	block, err := newAESCipherBlock()
-	if err != nil {
-		return "", err
-	}
-
-	cipherText := Decode(text)
-	cfb := cipher.NewCFBDecrypter(block, initializationVector)
+func (c *Cryption) Decrypt(text string) (string, error) {
+	cipherText := decode(text)
+	cfb := cipher.NewCFBDecrypter(c.Block, c.InitalizationVector)
 	plainText := make([]byte, len(cipherText))
 	cfb.XORKeyStream(plainText, cipherText)
 
 	return string(plainText), nil
+}
+
+func NewCrypt() *Cryption {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Couldn't load from .env file", err)
+	}
+
+	secret, ok := os.LookupEnv("MYSECRET")
+	if !ok {
+		log.Fatal("No MYSECRET found")
+	}
+
+	InitalizationVector := make([]byte, aes.BlockSize)
+	rand.Read(InitalizationVector)
+
+	Block, err := newAESCipherBlock(secret)
+	if err != nil {
+		log.Fatal("Fail to create blocl")
+	}
+
+	return &Cryption{
+		InitalizationVector,
+		Block,
+		secret,
+	}
 }
