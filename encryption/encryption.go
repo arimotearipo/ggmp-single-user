@@ -4,21 +4,21 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
 	"log"
-	"os"
 
-	"github.com/joho/godotenv"
+	"golang.org/x/crypto/pbkdf2"
 )
 
 type Cryption struct {
 	InitalizationVector []byte
 	Block               cipher.Block
-	secret              string
+	secret              []byte
 }
 
-func newAESCipherBlock(secret string) (cipher.Block, error) {
-	block, err := aes.NewCipher([]byte(secret))
+func newAESCipherBlock(secret []byte) (cipher.Block, error) {
+	block, err := aes.NewCipher(secret)
 
 	if err != nil {
 		return nil, err
@@ -59,16 +59,21 @@ func (c *Cryption) Decrypt(text string) (string, error) {
 	return string(plainText), nil
 }
 
-func NewCrypt() *Cryption {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Couldn't load from .env file", err)
-	}
+func generateSalt() []byte {
+	salt := make([]byte, 16)
+	rand.Read(salt)
 
-	secret, ok := os.LookupEnv("MYSECRET")
-	if !ok {
-		log.Fatal("No MYSECRET found")
-	}
+	return salt
+}
+
+func deriveKey(password, salt []byte) []byte {
+	return pbkdf2.Key(password, salt, 1000000, 32, sha256.New)
+}
+
+func NewCrypt(password []byte) *Cryption {
+	salt := generateSalt()
+
+	secret := deriveKey(password, salt)
 
 	InitalizationVector := make([]byte, aes.BlockSize)
 	rand.Read(InitalizationVector)

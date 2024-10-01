@@ -8,9 +8,9 @@ import (
 )
 
 var registerCmd = &cobra.Command{
-	Use: "register",
+	Use:   "register",
 	Short: "Create a new account",
-	Run: func (cmd *cobra.Command, args []string)  {
+	Run: func(cmd *cobra.Command, args []string) {
 		bytes, err := bcrypt.GenerateFromPassword([]byte(password), 10)
 
 		if err != nil {
@@ -24,7 +24,6 @@ var registerCmd = &cobra.Command{
 func init() {
 	registerCmd.Flags().StringVarP(&username, "username", "u", "", "Your username")
 	registerCmd.Flags().StringVarP(&password, "password", "p", "", "Your master password")
-
 
 	rootCmd.AddCommand(registerCmd)
 }
