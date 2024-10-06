@@ -1,8 +1,8 @@
-# Password Manager CLI
+# Go-Get-My-Password
 
 =======================
 
-A simple password manager that runs on a looping Command-Line Interface (CLI).
+A simple password manager that runs on a looping Command-Line Interface (CLI) built with Go.
 
 ## Overview
 
@@ -15,9 +15,9 @@ This password manager allows users to store, retrieve, and manage their password
 ---
 
 - Store passwords securely using AES encryption
-- Retrieve passwords by account name or username
+- Retrieve passwords by domain name/URI
 - Add, edit, and delete password entries
-- Generate strong, unique passwords
+- Generate strong, unique passwords (coming soon)
 
 ## Usage
 
