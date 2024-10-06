@@ -1,4 +1,4 @@
-package db
+package database
 
 import (
 	"database/sql"
@@ -6,7 +6,6 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 )
-
 
 type Database struct {
 	DB *sql.DB
@@ -37,7 +36,6 @@ func (d *Database) CreateSchema() {
 		log.Fatal("Fail to prepare createAccountsSchema SQL statement")
 	}
 
-
 	statement.Exec()
 	log.Println("Account table created")
 }
@@ -56,5 +54,5 @@ func (d *Database) RegisterAccount(u string, h string) {
 }
 
 func (d *Database) NewLogin(u string, h string) {
-	
+
 }
