@@ -3,7 +3,6 @@ package encryption
 import (
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	"log"
@@ -59,24 +58,11 @@ func (c *Encryption) Decrypt(text string) (string, error) {
 	return string(plainText), nil
 }
 
-func generateSalt() []byte {
-	salt := make([]byte, 16)
-
-	_, err := rand.Read(salt)
-	if err != nil {
-		log.Fatal("Fail to generate salt")
-	}
-
-	return salt
-}
-
 func deriveKey(password, salt []byte) []byte {
 	return pbkdf2.Key(password, salt, 1000000, 32, sha256.New)
 }
 
-func NewEncryption(masterPassword, initializationVector []byte) *Encryption {
-	salt := generateSalt()
-
+func NewEncryption(masterPassword, initializationVector, salt []byte) *Encryption {
 	secret := deriveKey(masterPassword, salt)
 
 	block, err := newAESCipherBlock(secret)

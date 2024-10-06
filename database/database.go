@@ -167,6 +167,6 @@ func (db *Database) GetMasterAccount(username string) (string, []byte, []byte, e
 
 	var hashedPassword string
 	var initializationVector, salt []byte
-	statement.QueryRow(username).Scan(&hashedPassword, &initializationVector, salt)
+	statement.QueryRow(username).Scan(&hashedPassword, &initializationVector, &salt)
 	return hashedPassword, initializationVector, salt, nil
 }

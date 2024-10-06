@@ -3,13 +3,11 @@ package cmd
 import (
 	"crypto/aes"
 	"crypto/rand"
-	"crypto/sha256"
 	"fmt"
 	"ggmp/database"
 	"ggmp/encryption"
 
 	"golang.org/x/crypto/bcrypt"
-	"golang.org/x/crypto/pbkdf2"
 )
 
 type Command struct {
@@ -129,6 +127,7 @@ func (c *Command) Login() bool {
 		fmt.Println(err)
 		return false
 	}
+	fmt.Printf("SALT VALUE: %x\n", string(salt))
 
 	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 	if err != nil {
@@ -136,9 +135,7 @@ func (c *Command) Login() bool {
 		return false
 	}
 
-	secret := pbkdf2.Key([]byte(password), salt, 1000000, 32, sha256.New)
-
-	c.e = encryption.NewEncryption(secret, initializationVector)
+	c.e = encryption.NewEncryption([]byte(password), initializationVector, salt)
 	return true
 }
 
@@ -166,6 +163,7 @@ func (c *Command) Register() bool {
 		fmt.Println(err)
 		return false
 	}
+	fmt.Printf("SALT VALUE: %x\n", string(salt))
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 12)
 	if err != nil {
