@@ -1,4 +1,4 @@
-module ggmp
+module github.com/arimotearipo/ggmp
 
 go 1.23.1
 

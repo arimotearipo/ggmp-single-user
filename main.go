@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"ggmp/cmd"
-	"ggmp/database"
 	"os"
+
+	"github.com/arimotearipo/ggmp/cmd"
+	"github.com/arimotearipo/ggmp/database"
 )
 
 func readCommands(c *cmd.Command) {

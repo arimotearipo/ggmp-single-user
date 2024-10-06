@@ -4,8 +4,9 @@ import (
 	"crypto/aes"
 	"crypto/rand"
 	"fmt"
-	"ggmp/database"
-	"ggmp/encryption"
+
+	"github.com/arimotearipo/ggmp/database"
+	"github.com/arimotearipo/ggmp/encryption"
 
 	"golang.org/x/crypto/bcrypt"
 )
