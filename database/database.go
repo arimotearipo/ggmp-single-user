@@ -170,3 +170,46 @@ func (db *Database) GetMasterAccount(username string) (string, []byte, []byte, e
 	statement.QueryRow(username).Scan(&hashedPassword, &initializationVector, &salt)
 	return hashedPassword, initializationVector, salt, nil
 }
+
+func (db *Database) DeleteMasterAccount(username string) error {
+	deleteMasterAccountQuery := `DELETE FROM master_account WHERE username = ?;`
+	statement, err := db.DB.Prepare(deleteMasterAccountQuery)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	statement.Exec(username)
+
+	deleteLoginsQuery := `DELETE FROM logins WHERE username = ?;`
+	statement, err = db.DB.Prepare(deleteLoginsQuery)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	statement.Exec(username)
+
+	return nil
+}
+
+func (db *Database) ListMasterAccounts() ([]string, error) {
+	selectMasterAccountQuery := `SELECT username FROM master_account;`
+	statement, err := db.DB.Prepare(selectMasterAccountQuery)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	rows, err := statement.Query()
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	var usernames []string
+	for rows.Next() {
+		var username string
+		rows.Scan(&username)
+		usernames = append(usernames, username)
+	}
+	return usernames, nil
+}

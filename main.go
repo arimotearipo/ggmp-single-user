@@ -43,7 +43,9 @@ func authenticate(c *cmd.Command) {
 	for {
 		fmt.Println("1. Login")
 		fmt.Println("2. Register")
-		fmt.Println("3. Exit")
+		fmt.Println("3. List accounts")
+		fmt.Println("4. Delete account")
+		fmt.Println("5. Exit")
 		fmt.Printf("Enter your choice: ")
 
 		var choice int
@@ -60,6 +62,10 @@ func authenticate(c *cmd.Command) {
 				continue
 			}
 		case 3:
+			c.ListAccounts()
+		case 4:
+			c.Delete()
+		case 5:
 			fmt.Println("Exit")
 			os.Exit(0)
 		}

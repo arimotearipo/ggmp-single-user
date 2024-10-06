@@ -19,6 +19,7 @@ func NewCommands(db *database.Database) *Command {
 	return &Command{e: nil, db: db}
 }
 
+// === LOGINS ====
 func (c *Command) AddPassword() {
 	fmt.Println("Adding password")
 
@@ -111,6 +112,7 @@ func (c *Command) UpdatePassword() {
 	c.db.UpdatePassword(uri, username, hashed_password)
 }
 
+// === MASTER ACCOUNT ===
 func (c *Command) Login() bool {
 	fmt.Println("Login")
 
@@ -127,7 +129,6 @@ func (c *Command) Login() bool {
 		fmt.Println(err)
 		return false
 	}
-	fmt.Printf("SALT VALUE: %x\n", string(salt))
 
 	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 	if err != nil {
@@ -163,7 +164,6 @@ func (c *Command) Register() bool {
 		fmt.Println(err)
 		return false
 	}
-	fmt.Printf("SALT VALUE: %x\n", string(salt))
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 12)
 	if err != nil {
@@ -175,4 +175,33 @@ func (c *Command) Register() bool {
 
 	fmt.Println("Signup successful. Proceed to login.")
 	return true
+}
+
+func (c *Command) Delete() bool {
+	fmt.Println("Delete")
+
+	fmt.Printf("Enter username:")
+	var username string
+	fmt.Scanf("%s", &username)
+
+	err := c.db.DeleteMasterAccount(username)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+
+	fmt.Println("Account deleted successfully.")
+	return true
+}
+
+func (c *Command) ListAccounts() {
+	fmt.Println("List accounts")
+
+	accounts, err := c.db.ListMasterAccounts()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println("Accounts: ", accounts)
 }
