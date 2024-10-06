@@ -1,9 +1,15 @@
 package cmd
 
 import (
+	"crypto/aes"
+	"crypto/rand"
+	"crypto/sha256"
 	"fmt"
 	"ggmp/database"
 	"ggmp/encryption"
+
+	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/crypto/pbkdf2"
 )
 
 type Command struct {
@@ -11,8 +17,8 @@ type Command struct {
 	db *database.Database
 }
 
-func NewCommands(e *encryption.Encryption, db *database.Database) *Command {
-	return &Command{e: e, db: db}
+func NewCommands(db *database.Database) *Command {
+	return &Command{e: nil, db: db}
 }
 
 func (c *Command) AddPassword() {
@@ -105,4 +111,70 @@ func (c *Command) UpdatePassword() {
 	}
 
 	c.db.UpdatePassword(uri, username, hashed_password)
+}
+
+func (c *Command) Login() bool {
+	fmt.Println("Login")
+
+	fmt.Printf("Enter username: ")
+	var username string
+	fmt.Scanf("%s", &username)
+
+	fmt.Printf("Enter password: ")
+	var password string
+	fmt.Scanf("%s", &password)
+
+	hashedPassword, initializationVector, salt, err := c.db.GetMasterAccount(username)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+
+	secret := pbkdf2.Key([]byte(password), salt, 1000000, 32, sha256.New)
+
+	c.e = encryption.NewEncryption(secret, initializationVector)
+	return true
+}
+
+func (c *Command) Register() bool {
+	fmt.Println("Register")
+
+	fmt.Printf("Enter username: ")
+	var username string
+	fmt.Scanf("%s", &username)
+
+	fmt.Printf("Enter psasword: ")
+	var password string
+	fmt.Scanf("%s", &password)
+
+	initializationVector := make([]byte, aes.BlockSize)
+	_, err := rand.Read(initializationVector)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+
+	salt := make([]byte, 16)
+	_, err = rand.Read(salt)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 12)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+
+	c.db.AddMasterAccount(username, string(hashedPassword), initializationVector, salt)
+
+	fmt.Println("Signup successful. Proceed to login.")
+	return true
 }

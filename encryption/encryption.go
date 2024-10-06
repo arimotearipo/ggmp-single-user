@@ -61,7 +61,11 @@ func (c *Encryption) Decrypt(text string) (string, error) {
 
 func generateSalt() []byte {
 	salt := make([]byte, 16)
-	rand.Read(salt)
+
+	_, err := rand.Read(salt)
+	if err != nil {
+		log.Fatal("Fail to generate salt")
+	}
 
 	return salt
 }
@@ -70,22 +74,19 @@ func deriveKey(password, salt []byte) []byte {
 	return pbkdf2.Key(password, salt, 1000000, 32, sha256.New)
 }
 
-func NewEncryption(masterPassword []byte) *Encryption {
+func NewEncryption(masterPassword, initializationVector []byte) *Encryption {
 	salt := generateSalt()
 
 	secret := deriveKey(masterPassword, salt)
 
-	InitalizationVector := make([]byte, aes.BlockSize)
-	rand.Read(InitalizationVector)
-
-	Block, err := newAESCipherBlock(secret)
+	block, err := newAESCipherBlock(secret)
 	if err != nil {
-		log.Fatal("Fail to create blocl")
+		log.Fatal("Fail to create block")
 	}
 
 	return &Encryption{
-		InitalizationVector,
-		Block,
-		secret,
+		InitalizationVector: initializationVector,
+		Block:               block,
+		secret:              secret,
 	}
 }

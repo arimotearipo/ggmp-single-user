@@ -2,6 +2,8 @@ package database
 
 import (
 	"database/sql"
+	"errors"
+	"fmt"
 	"log"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -23,7 +25,9 @@ func NewDatabase(name string) *Database {
 	createMasterAccountSchema := `CREATE TABLE IF NOT EXISTS master_account (
 		"id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
 		"username" TEXT,
-		"hashed_password" TEXT
+		"hashed_password" TEXT,
+		"initialization_vector" BLOB NOT NULL,
+		"salt" BLOB NOT NULL
 	);`
 	statement, err := DB.Prepare(createMasterAccountSchema)
 	if err != nil {
@@ -126,4 +130,43 @@ func (db *Database) UpdatePassword(uri string, username string, encryptedPasswor
 
 	statement.Exec(username, encryptedPassword, uri)
 	return nil
+}
+
+func (db *Database) AddMasterAccount(username string, hashedPassword string, initializationVector, salt []byte) error {
+	insertMasterAccountQuery := `INSERT INTO master_account (username, hashed_password, initialization_vector, salt) VALUES (?, ?, ?, ?);`
+	statement, err := db.DB.Prepare(insertMasterAccountQuery)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	statement.Exec(username, hashedPassword, initializationVector, salt)
+	return nil
+}
+
+func (db *Database) GetMasterAccount(username string) (string, []byte, []byte, error) {
+	selectMasterAccountQuery := `SELECT COUNT(*) FROM master_account WHERE username = ?;`
+	statement, err := db.DB.Prepare(selectMasterAccountQuery)
+	if err != nil {
+		fmt.Println(err)
+		return "", nil, nil, err
+	}
+
+	var count int
+	statement.QueryRow(username).Scan(&count)
+	if count == 0 {
+		return "", nil, nil, errors.New("username does not exist")
+	}
+
+	selectMasterAccountQuery = `SELECT hashed_password, initialization_vector, salt FROM master_account WHERE username = ?;`
+	statement, err = db.DB.Prepare(selectMasterAccountQuery)
+	if err != nil {
+		fmt.Println(err)
+		return "", nil, nil, err
+	}
+
+	var hashedPassword string
+	var initializationVector, salt []byte
+	statement.QueryRow(username).Scan(&hashedPassword, &initializationVector, salt)
+	return hashedPassword, initializationVector, salt, nil
 }
