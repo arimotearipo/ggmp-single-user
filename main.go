@@ -139,6 +139,7 @@ func main() {
 	e = encryption.NewEncryption([]byte("password"))
 
 	db = database.NewDatabase("ggmp.db")
+	defer db.Close()
 
 	readCommands()
 }
