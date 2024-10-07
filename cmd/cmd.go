@@ -114,17 +114,10 @@ func (c *Command) UpdatePassword() {
 }
 
 // === MASTER ACCOUNT ===
-func (c *Command) Login() bool {
-	fmt.Println("Login")
 
-	fmt.Printf("Enter username: ")
-	var username string
-	fmt.Scanf("%s", &username)
-
-	fmt.Printf("Enter password: ")
-	var password string
-	fmt.Scanf("%s", &password)
-
+// Will prompt the user for username and password and
+// proceeds to compare the hash and password
+func (c *Command) Login(username, password string) bool {
 	hashedPassword, initializationVector, salt, err := c.db.GetMasterAccount(username)
 	if err != nil {
 		fmt.Println(err)
@@ -141,17 +134,7 @@ func (c *Command) Login() bool {
 	return true
 }
 
-func (c *Command) Register() bool {
-	fmt.Println("Register")
-
-	fmt.Printf("Enter username: ")
-	var username string
-	fmt.Scanf("%s", &username)
-
-	fmt.Printf("Enter psasword: ")
-	var password string
-	fmt.Scanf("%s", &password)
-
+func (c *Command) Register(username, password string) bool {
 	initializationVector := make([]byte, aes.BlockSize)
 	_, err := rand.Read(initializationVector)
 	if err != nil {
@@ -178,12 +161,10 @@ func (c *Command) Register() bool {
 	return true
 }
 
-func (c *Command) Delete() bool {
-	fmt.Println("Delete")
-
-	fmt.Printf("Enter username:")
-	var username string
-	fmt.Scanf("%s", &username)
+func (c *Command) Delete(username, password string) bool {
+	if !c.Login(username, password) {
+		return false
+	}
 
 	err := c.db.DeleteMasterAccount(username)
 	if err != nil {
@@ -195,14 +176,14 @@ func (c *Command) Delete() bool {
 	return true
 }
 
-func (c *Command) ListAccounts() {
+func (c *Command) ListAccounts() []string {
 	fmt.Println("List accounts")
 
 	accounts, err := c.db.ListMasterAccounts()
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil
 	}
 
-	fmt.Println("Accounts: ", accounts)
+	return accounts
 }

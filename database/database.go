@@ -180,7 +180,7 @@ func (db *Database) DeleteMasterAccount(username string) error {
 	}
 	statement.Exec(username)
 
-	deleteLoginsQuery := `DELETE FROM logins WHERE username = ?;`
+	deleteLoginsQuery := `DELETE FROM accounts WHERE username = ?;`
 	statement, err = db.DB.Prepare(deleteLoginsQuery)
 	if err != nil {
 		fmt.Println(err)
