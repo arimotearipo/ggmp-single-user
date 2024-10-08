@@ -2,7 +2,7 @@
 
 =======================
 
-A simple password manager that runs on a looping Command-Line Interface (CLI) built with Go.
+A simple password manager that runs on the terminal with basic menu UI features -- built with Go and Bubble Tea.
 
 ## Overview
 
@@ -26,14 +26,26 @@ This password manager allows users to store, retrieve, and manage their password
 1. Run the CLI using `go run main.go`
 2. Follow the menu prompts to perform desired actions
 
-## Requirements
+## Dependencies
 
----
+This project requires the following dependencies:
 
 - Go 1.13 or later
-- The following dependencies:
-  - `github.com/mattn/go-sqlite3` for SQLite database operations
-  - `golang.org/x/crypto/pbkdf2` for password-based key derivation
+- github.com/mattn/go-sqlite3
+- golang.org/x/crypto/pbkdf2
+- golang.org/x/crypto/bcrypt
+- github.com/charmbracelet/bubbletea
+- github.com/charmbracelet/bubbles/textinput
+
+To install these dependencies, run:
+
+```bash
+go get github.com/mattn/go-sqlite3
+go get golang.org/x/crypto/pbkdf2
+go get golang.org/x/crypto/bcrypt
+go get github.com/charmbracelet/bubbletea
+go get github.com/charmbracelet/bubbles/textinput
+```
 
 ## Security
 
