@@ -1,17 +1,17 @@
 package teamodels
 
 import (
-	"github.com/arimotearipo/ggmp/cmd"
+	"github.com/arimotearipo/ggmp/action"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 type ListAccountsModel struct {
-	cmd       *cmd.Command
+	cmd       *action.Action
 	menuIdx   int
 	menuItems []string
 }
 
-func NewListAccountsModel(c *cmd.Command) *ListAccountsModel {
+func NewListAccountsModel(c *action.Action) *ListAccountsModel {
 	return &ListAccountsModel{
 		cmd:       c,
 		menuItems: append(c.ListAccounts(), "BACK"),

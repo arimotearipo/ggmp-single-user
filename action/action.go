@@ -1,4 +1,4 @@
-package cmd
+package action
 
 import (
 	"crypto/aes"
@@ -11,17 +11,17 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type Command struct {
+type Action struct {
 	e  *encryption.Encryption
 	db *database.Database
 }
 
-func NewCommands(db *database.Database) *Command {
-	return &Command{e: nil, db: db}
+func NewAction(db *database.Database) *Action {
+	return &Action{e: nil, db: db}
 }
 
 // === LOGINS ====
-func (c *Command) AddPassword() {
+func (c *Action) AddPassword() {
 	fmt.Println("Adding password")
 
 	fmt.Println("Enter uri:")
@@ -45,7 +45,7 @@ func (c *Command) AddPassword() {
 	c.db.AddPassword(uri, username, encryptedPassword)
 }
 
-func (c *Command) GetPassword() {
+func (c *Action) GetPassword() {
 	fmt.Println("Getting password")
 
 	fmt.Println("Enter uri:")
@@ -67,7 +67,7 @@ func (c *Command) GetPassword() {
 	fmt.Println("Password: ", password)
 }
 
-func (c *Command) ListURIs() {
+func (c *Action) ListURIs() {
 	fmt.Println("Listing URIs")
 
 	uris, err := c.db.ListURIs()
@@ -79,7 +79,7 @@ func (c *Command) ListURIs() {
 	fmt.Println("URIs: ", uris)
 }
 
-func (c *Command) DeletePassword() {
+func (c *Action) DeletePassword() {
 	fmt.Println("Deleting password")
 
 	fmt.Println("Enter uri:")
@@ -89,7 +89,7 @@ func (c *Command) DeletePassword() {
 	c.db.DeleteAccount(uri)
 }
 
-func (c *Command) UpdatePassword() {
+func (c *Action) UpdatePassword() {
 	fmt.Println("Updating password")
 
 	fmt.Printf("Enter uri: ")
@@ -117,7 +117,7 @@ func (c *Command) UpdatePassword() {
 
 // Will prompt the user for username and password and
 // proceeds to compare the hash and password
-func (c *Command) Login(username, password string) bool {
+func (c *Action) Login(username, password string) bool {
 	hashedPassword, initializationVector, salt, err := c.db.GetMasterAccount(username)
 	if err != nil {
 		fmt.Println(err)
@@ -134,7 +134,7 @@ func (c *Command) Login(username, password string) bool {
 	return true
 }
 
-func (c *Command) Register(username, password string) bool {
+func (c *Action) Register(username, password string) bool {
 	initializationVector := make([]byte, aes.BlockSize)
 	_, err := rand.Read(initializationVector)
 	if err != nil {
@@ -161,7 +161,7 @@ func (c *Command) Register(username, password string) bool {
 	return true
 }
 
-func (c *Command) Delete(username, password string) bool {
+func (c *Action) Delete(username, password string) bool {
 	if !c.Login(username, password) {
 		return false
 	}
@@ -176,9 +176,7 @@ func (c *Command) Delete(username, password string) bool {
 	return true
 }
 
-func (c *Command) ListAccounts() []string {
-	fmt.Println("List accounts")
-
+func (c *Action) ListAccounts() []string {
 	accounts, err := c.db.ListMasterAccounts()
 	if err != nil {
 		fmt.Println(err)

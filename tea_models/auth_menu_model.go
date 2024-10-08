@@ -1,21 +1,21 @@
 package teamodels
 
 import (
-	"github.com/arimotearipo/ggmp/cmd"
+	"github.com/arimotearipo/ggmp/action"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 type AuthMenuModel struct {
-	cmd       *cmd.Command
+	action    *action.Action
 	menuIdx   int
 	menuItems []string
 }
 
-func NewAuthMenuModel(c *cmd.Command) *AuthMenuModel {
+func NewAuthMenuModel(a *action.Action) *AuthMenuModel {
 	return &AuthMenuModel{
-		cmd:       c,
+		action:    a,
 		menuIdx:   0,
-		menuItems: []string{"Login", "Register", "List accounts", "Delete account", "Exit"},
+		menuItems: []string{"Login", "Register", "List accounts", "Delete account", "EXIT"},
 	}
 }
 
@@ -36,14 +36,14 @@ func (m *AuthMenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			switch selectedAction {
 			case "Login":
-				return NewLoginModel(m.cmd), nil
+				return NewLoginModel(m.action), nil
 			case "Register":
-				return NewRegisterModel(m.cmd), nil
+				return NewRegisterModel(m.action), nil
 			case "List accounts":
-				return NewListAccountsModel(m.cmd), nil
+				return NewListAccountsModel(m.action), nil
 			case "Delete account":
-				return NewDeleteAccountModel(m.cmd), nil
-			case "Exit":
+				return NewDeleteAccountModel(m.action), nil
+			case "EXIT":
 				return m, tea.Quit
 			}
 		}

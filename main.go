@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/arimotearipo/ggmp/cmd"
+	"github.com/arimotearipo/ggmp/action"
 	"github.com/arimotearipo/ggmp/database"
 	teamodels "github.com/arimotearipo/ggmp/tea_models"
 	tea "github.com/charmbracelet/bubbletea"
@@ -16,9 +16,9 @@ func main() {
 	db := database.NewDatabase("ggmp.db")
 	defer db.Close()
 
-	commands := cmd.NewCommands(db)
+	a := action.NewAction(db)
 
-	model := teamodels.NewAuthMenuModel(commands)
+	model := teamodels.NewAuthMenuModel(a)
 	programme := tea.NewProgram(model)
 
 	if _, err := programme.Run(); err != nil {

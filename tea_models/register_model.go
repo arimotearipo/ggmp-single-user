@@ -1,12 +1,12 @@
 package teamodels
 
 import (
-	"github.com/arimotearipo/ggmp/cmd"
+	"github.com/arimotearipo/ggmp/action"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 type RegisterModel struct {
-	cmd             *cmd.Command
+	action          *action.Action
 	menuIdx         int
 	menuItems       []string
 	username        string
@@ -15,9 +15,9 @@ type RegisterModel struct {
 	err             string
 }
 
-func NewRegisterModel(c *cmd.Command) *RegisterModel {
+func NewRegisterModel(c *action.Action) *RegisterModel {
 	return &RegisterModel{
-		cmd:       c,
+		action:    c,
 		menuItems: []string{"Username: ", "Password: ", "Confirm Password: ", "SUBMIT", "BACK"},
 	}
 }
@@ -43,13 +43,13 @@ func (m *RegisterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if m.err != "" {
 					return m, nil
 				}
-				if m.cmd.Register(m.username, m.password) {
-					return NewAuthMenuModel(m.cmd), nil
+				if m.action.Register(m.username, m.password) {
+					return NewAuthMenuModel(m.action), nil
 				}
 				return m, tea.Quit
 			}
 			if m.menuItems[m.menuIdx] == "BACK" {
-				return NewAuthMenuModel(m.cmd), nil
+				return NewAuthMenuModel(m.action), nil
 			}
 		default:
 			if m.menuIdx == 0 {

@@ -1,19 +1,19 @@
 package teamodels
 
 import (
-	"github.com/arimotearipo/ggmp/cmd"
+	"github.com/arimotearipo/ggmp/action"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 type PasswordMenuModel struct {
-	cmd       *cmd.Command
+	action    *action.Action
 	menuIdx   int
 	menuItems []string
 }
 
-func NewPasswordMenuModel(c *cmd.Command) *PasswordMenuModel {
+func NewPasswordMenuModel(c *action.Action) *PasswordMenuModel {
 	return &PasswordMenuModel{
-		cmd:       c,
+		action:    c,
 		menuItems: []string{"Get password", "Add password", "List URIs", "Delete password", "Update password", "Exit"},
 	}
 }

@@ -1,21 +1,21 @@
 package teamodels
 
 import (
-	"github.com/arimotearipo/ggmp/cmd"
+	"github.com/arimotearipo/ggmp/action"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 type LoginModel struct {
-	cmd       *cmd.Command
+	action    *action.Action
 	menuIdx   int
 	menuItems []string
 	username  string
 	password  string
 }
 
-func NewLoginModel(c *cmd.Command) *LoginModel {
+func NewLoginModel(a *action.Action) *LoginModel {
 	return &LoginModel{
-		cmd:       c,
+		action:    a,
 		menuItems: []string{"Username: ", "Password: ", "SUBMIT", "BACK"},
 		menuIdx:   0,
 		username:  "",
@@ -41,13 +41,13 @@ func (m *LoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.menuItems[m.menuIdx] = m.menuItems[m.menuIdx][:len(m.menuItems[m.menuIdx])-1]
 		case "enter":
 			if m.menuItems[m.menuIdx] == "SUBMIT" {
-				if m.cmd.Login(m.username, m.password) {
-					return NewPasswordMenuModel(m.cmd), nil
+				if m.action.Login(m.username, m.password) {
+					return NewPasswordMenuModel(m.action), nil
 				}
 				return m, tea.Quit
 			}
 			if m.menuItems[m.menuIdx] == "BACK" {
-				return NewAuthMenuModel(m.cmd), nil
+				return NewAuthMenuModel(m.action), nil
 			}
 		default:
 			if m.menuIdx == 0 {
