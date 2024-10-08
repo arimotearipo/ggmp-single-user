@@ -1,8 +1,6 @@
 package teamodels
 
 import (
-	"fmt"
-
 	"github.com/arimotearipo/ggmp/action"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -16,13 +14,6 @@ type RegisterModel struct {
 	password        textinput.Model
 	confirmPassword textinput.Model
 	err             string
-}
-
-func errorMsg(err error) string {
-	if err != nil {
-		return fmt.Sprintf("Error: %s", err.Error())
-	}
-	return ""
 }
 
 func (m *RegisterModel) blurAllInputs() {
