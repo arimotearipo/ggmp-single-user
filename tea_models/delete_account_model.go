@@ -1,10 +1,8 @@
 package teamodels
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/arimotearipo/ggmp/action"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -14,59 +12,72 @@ type DeletingAccountModel struct {
 	menuIdx   int
 	menuItems []string
 	user      string
-	password  string
+	password  textinput.Model
 }
 
 func NewDeletingAccountModel(c *action.Action, u string) *DeletingAccountModel {
+	passwordInput := textinput.New()
+	passwordInput.Placeholder = "Enter password"
+	passwordInput.EchoMode = textinput.EchoPassword
+	passwordInput.Focus()
+
 	return &DeletingAccountModel{
 		cmd:       c,
 		user:      u,
 		menuIdx:   0,
-		menuItems: []string{"Enter password: ", "BACK"},
-		password:  "",
+		menuItems: []string{"Password", "SUBMIT", "BACK"},
+		password:  passwordInput,
 	}
 }
 
 func (m *DeletingAccountModel) Init() tea.Cmd {
-	return nil
+	return textinput.Blink
 }
 
 func (m *DeletingAccountModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		selected := m.menuItems[m.menuIdx]
 		switch msg.String() {
 		case "ctrl+c", "esc":
 			return m, tea.Quit
-		case "up":
-			m.menuIdx = (m.menuIdx - 1 + len(m.menuItems)) % len(m.menuItems)
-		case "down":
-			m.menuIdx = (m.menuIdx + 1) % len(m.menuItems)
-		case "backspace":
-			if len(m.password) == 0 {
-				return m, nil
+		case "up", "down":
+			if msg.String() == "up" {
+				m.menuIdx = (m.menuIdx - 1 + len(m.menuItems)) % len(m.menuItems)
+			} else {
+				m.menuIdx = (m.menuIdx + 1) % len(m.menuItems)
 			}
-			m.password = m.password[:len(m.password)-1]
 		case "enter":
-			selected := m.menuItems[m.menuIdx]
-			if selected == "BACK" {
+			switch selected {
+			case "BACK":
 				return NewDeleteAccountModel(m.cmd), nil
+			case "SUBMIT":
+				// TODO: handle submit
 			}
-		default:
-			m.password += "*"
 		}
 	}
-	return m, nil
 
+	if m.menuIdx == 0 {
+		m.password, cmd = m.password.Update(msg)
+	}
+	return m, cmd
 }
 
 func (m *DeletingAccountModel) View() string {
-	blurredPassword := strings.Repeat(string("*"), len(m.password))
-	s := fmt.Sprintf("Deleting account: %s\n", m.user)
+	s := ""
 	for idx, item := range m.menuItems {
 		if idx == m.menuIdx {
-			s += "👉 " + item + " " + blurredPassword + "\n"
+			s += "👉 "
 		} else {
-			s += "   " + item + "\n"
+			s += "   "
+		}
+
+		if item == "Password" {
+			s += m.password.View() + "\n"
+		} else {
+			s += item + "\n"
 		}
 	}
 	return s
