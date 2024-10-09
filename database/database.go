@@ -24,7 +24,7 @@ func NewDatabase(name string) *Database {
 	// creating master account table
 	createMasterAccountSchema := `CREATE TABLE IF NOT EXISTS master_account (
 		"id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
-		"username" TEXT,
+		"username" TEXT UNIQUE,
 		"hashed_password" TEXT,
 		"initialization_vector" BLOB NOT NULL,
 		"salt" BLOB NOT NULL
@@ -40,6 +40,7 @@ func NewDatabase(name string) *Database {
 	// create accounts table
 	createAccountsSchema := `CREATE TABLE IF NOT EXISTS accounts (
 		"id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+		"owner" REFERENCES master_account (id),
 		"uri" TEXT,
 		"username" TEXT,
 		"hashed_password" TEXT
@@ -140,7 +141,11 @@ func (db *Database) AddMasterAccount(username string, hashedPassword string, ini
 		return err
 	}
 
-	statement.Exec(username, hashedPassword, initializationVector, salt)
+	_, err = statement.Exec(username, hashedPassword, initializationVector, salt)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -175,7 +180,6 @@ func (db *Database) DeleteMasterAccount(username string) error {
 	deleteMasterAccountQuery := `DELETE FROM master_account WHERE username = ?;`
 	statement, err := db.DB.Prepare(deleteMasterAccountQuery)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	statement.Exec(username)
@@ -183,10 +187,12 @@ func (db *Database) DeleteMasterAccount(username string) error {
 	deleteLoginsQuery := `DELETE FROM accounts WHERE username = ?;`
 	statement, err = db.DB.Prepare(deleteLoginsQuery)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
-	statement.Exec(username)
+	_, err = statement.Exec(username)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -68,7 +68,8 @@ func (m *LoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "BACK":
 				return NewAuthMenuModel(m.action), nil
 			case "SUBMIT":
-				if m.action.Login(m.username.Value(), m.password.Value()) {
+				ok, _ := m.action.Login(m.username.Value(), m.password.Value())
+				if ok {
 					return NewPasswordMenuModel(m.action), nil
 				}
 				return m, tea.Quit

@@ -117,63 +117,58 @@ func (c *Action) UpdatePassword() {
 
 // Will prompt the user for username and password and
 // proceeds to compare the hash and password
-func (c *Action) Login(username, password string) bool {
+func (c *Action) Login(username, password string) (bool, error) {
 	hashedPassword, initializationVector, salt, err := c.db.GetMasterAccount(username)
 	if err != nil {
-		fmt.Println(err)
-		return false
+		return false, err
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 	if err != nil {
-		fmt.Println(err)
-		return false
+		return false, err
 	}
 
 	c.e = encryption.NewEncryption([]byte(password), initializationVector, salt)
-	return true
+	return true, nil
 }
 
-func (c *Action) Register(username, password string) bool {
+func (c *Action) Register(username, password string) string {
 	initializationVector := make([]byte, aes.BlockSize)
 	_, err := rand.Read(initializationVector)
 	if err != nil {
-		fmt.Println(err)
-		return false
+		return err.Error()
 	}
 
 	salt := make([]byte, 16)
 	_, err = rand.Read(salt)
 	if err != nil {
-		fmt.Println(err)
-		return false
+		return err.Error()
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 12)
 	if err != nil {
-		fmt.Println(err)
-		return false
+		return err.Error()
 	}
 
-	c.db.AddMasterAccount(username, string(hashedPassword), initializationVector, salt)
+	err = c.db.AddMasterAccount(username, string(hashedPassword), initializationVector, salt)
+	if err != nil {
+		return err.Error()
+	}
 
-	fmt.Println("Signup successful. Proceed to login.")
-	return true
+	return ""
 }
 
-func (c *Action) Delete(username, password string) bool {
-	if !c.Login(username, password) {
-		return false
+func (c *Action) Delete(username, password string) (bool, error) {
+	if ok, err := c.Login(username, password); !ok || err != nil {
+		return false, err
 	}
 
 	err := c.db.DeleteMasterAccount(username)
 	if err != nil {
-		fmt.Println(err)
-		return false
+		return false, err
 	}
 
-	fmt.Println("Account deleted successfully.")
-	return true
+	return true, nil
 }
 
 func (c *Action) ListAccounts() []string {

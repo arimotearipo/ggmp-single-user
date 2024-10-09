@@ -96,13 +96,16 @@ func (m *RegisterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "BACK":
 				return NewAuthMenuModel(m.action), nil
 			case "SUBMIT":
-				if m.err != "" {
+				if m.password.Value() != m.confirmPassword.Value() {
 					return m, nil
 				}
-				if m.action.Register(m.username.Value(), m.password.Value()) {
+				errMsg := m.action.Register(m.username.Value(), m.password.Value())
+				if errMsg == "" {
 					return NewAuthMenuModel(m.action), nil
+				} else {
+					m.err = errMsg
+					return m, nil
 				}
-				return m, tea.Quit
 			}
 		}
 	}

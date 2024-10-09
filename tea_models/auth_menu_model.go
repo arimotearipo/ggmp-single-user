@@ -27,7 +27,7 @@ func (m *AuthMenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl=c", "esc":
+		case "ctrl+c", "esc":
 			return m, tea.Quit
 		case "up":
 			m.menuIdx = (m.menuIdx - 1 + len(m.menuItems)) % len(m.menuItems)

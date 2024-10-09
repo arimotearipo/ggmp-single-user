@@ -8,25 +8,27 @@ import (
 
 // DeletingAccountModel is when you already select the account to delete
 type DeletingAccountModel struct {
-	cmd       *action.Action
+	action    *action.Action
 	menuIdx   int
 	menuItems []string
 	user      string
 	password  textinput.Model
+	err       string
 }
 
-func NewDeletingAccountModel(c *action.Action, u string) *DeletingAccountModel {
+func NewDeletingAccountModel(a *action.Action, u string) *DeletingAccountModel {
 	passwordInput := textinput.New()
 	passwordInput.Placeholder = "Enter password"
 	passwordInput.EchoMode = textinput.EchoPassword
 	passwordInput.Focus()
 
 	return &DeletingAccountModel{
-		cmd:       c,
+		action:    a,
 		user:      u,
 		menuIdx:   0,
 		menuItems: []string{"Password", "SUBMIT", "BACK"},
 		password:  passwordInput,
+		err:       "",
 	}
 }
 
@@ -52,9 +54,11 @@ func (m *DeletingAccountModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			switch selected {
 			case "BACK":
-				return NewDeleteAccountModel(m.cmd), nil
+				return NewDeleteAccountModel(m.action), nil
 			case "SUBMIT":
-				// TODO: handle submit
+				if ok, _ := m.action.Delete(m.user, m.password.Value()); ok {
+					return NewAuthMenuModel(m.action), nil
+				}
 			}
 		}
 	}
@@ -80,6 +84,7 @@ func (m *DeletingAccountModel) View() string {
 			s += item + "\n"
 		}
 	}
+	s += m.err
 	return s
 }
 
