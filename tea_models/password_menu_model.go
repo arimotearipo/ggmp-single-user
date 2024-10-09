@@ -14,7 +14,7 @@ type PasswordMenuModel struct {
 func NewPasswordMenuModel(c *action.Action) *PasswordMenuModel {
 	return &PasswordMenuModel{
 		action:    c,
-		menuItems: []string{"Get password", "Add password", "List URIs", "Delete password", "Update password", "Exit"},
+		menuItems: []string{"Get password", "Add password", "Delete password", "Update password", "EXIT"},
 	}
 }
 
@@ -35,7 +35,19 @@ func (m *PasswordMenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "backspace":
 			m.menuItems[m.menuIdx] = m.menuItems[m.menuIdx][:len(m.menuItems[m.menuIdx])-1]
 		case "enter":
-			// do something
+			selected := m.menuItems[m.menuIdx]
+			switch selected {
+			case "Add password":
+				return NewAddPasswordModel(m.action), nil
+			case "Get password":
+				return NewGetPasswordModel(m.action), nil
+			case "Delete password":
+				return NewDeletePasswordModel(m.action), nil
+			case "Update password":
+				return NewUpdatePasswordModel(m.action), nil
+			case "EXIT":
+				return NewAuthMenuModel(m.action), nil
+			}
 		}
 	}
 	return m, nil

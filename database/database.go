@@ -43,7 +43,7 @@ func NewDatabase(name string) *Database {
 		"owner" REFERENCES master_account (id),
 		"uri" TEXT,
 		"username" TEXT,
-		"hashed_password" TEXT
+		"encrypted_password" TEXT
 	);`
 	statement, err = DB.Prepare(createAccountsSchema)
 	if err != nil {
@@ -60,41 +60,44 @@ func (db *Database) Close() {
 	db.DB.Close()
 }
 
-func (db *Database) AddPassword(uri string, username string, encryptedPassword string) error {
-	insertAccountQuery := `INSERT INTO accounts (uri, username, hashed_password) VALUES (?, ?, ?);`
+func (db *Database) AddPassword(id int, uri, username, encryptedPassword string) error {
+	insertAccountQuery := `INSERT INTO accounts (owner, uri, username, encrypted_password) VALUES (?, ?, ?, ?);`
 	statement, err := db.DB.Prepare(insertAccountQuery)
-
 	if err != nil {
 		return err
 	}
 
-	statement.Exec(uri, username, encryptedPassword)
+	statement.Exec(id, uri, username, encryptedPassword)
 	return nil
 }
 
-func (db *Database) GetPassword(uri string) (string, error) {
-	selectAccountQuery := `SELECT username, hashed_password FROM accounts WHERE uri = ?;`
+func (db *Database) GetPassword(uri string, id int) (string, string, error) {
+	selectAccountQuery := `SELECT username, encrypted_password FROM accounts WHERE uri = ? AND owner = ?;`
 	statement, err := db.DB.Prepare(selectAccountQuery)
 
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	var username string
 	var encryptedPassword string
-	statement.QueryRow(uri).Scan(&username, &encryptedPassword)
-	return encryptedPassword, nil
+	err = statement.QueryRow(uri, id).Scan(&username, &encryptedPassword)
+	if err != nil {
+		return "", "", err
+	}
+
+	return username, encryptedPassword, nil
 }
 
-func (db *Database) ListURIs() ([]string, error) {
-	selectAccountQuery := `SELECT uri FROM accounts;`
+func (db *Database) ListURIs(id int) ([]string, error) {
+	selectAccountQuery := `SELECT uri FROM accounts WHERE owner = ?;`
 	statement, err := db.DB.Prepare(selectAccountQuery)
 
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := statement.Query()
+	rows, err := statement.Query(id)
 
 	if err != nil {
 		return nil, err
@@ -109,20 +112,24 @@ func (db *Database) ListURIs() ([]string, error) {
 	return uris, nil
 }
 
-func (db *Database) DeleteAccount(uri string) error {
-	deleteAccountQuery := `DELETE FROM accounts WHERE uri = ?;`
+func (db *Database) DeleteAccount(uri string, id int) error {
+	deleteAccountQuery := `DELETE FROM accounts WHERE uri = ? AND owner = ?;`
 	statement, err := db.DB.Prepare(deleteAccountQuery)
 
 	if err != nil {
 		return err
 	}
 
-	statement.Exec(uri)
+	_, err = statement.Exec(uri, id)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (db *Database) UpdatePassword(uri string, username string, encryptedPassword string) error {
-	updateAccountQuery := `UPDATE accounts SET username = ?, hashed_password = ? WHERE uri = ?;`
+	updateAccountQuery := `UPDATE accounts SET username = ?, encrypted_password = ? WHERE uri = ?;`
 	statement, err := db.DB.Prepare(updateAccountQuery)
 
 	if err != nil {
@@ -218,4 +225,21 @@ func (db *Database) ListMasterAccounts() ([]string, error) {
 		usernames = append(usernames, username)
 	}
 	return usernames, nil
+}
+
+func (db *Database) GetUserId(username string) (int, error) {
+	query := "SELECT id FROM master_account WHERE username = ?;"
+
+	statement, err := db.DB.Prepare(query)
+	if err != nil {
+		return 0, err
+	}
+
+	var id int
+	err = statement.QueryRow(username).Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+
+	return id, nil
 }
