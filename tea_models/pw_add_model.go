@@ -13,7 +13,7 @@ type PasswordAddModel struct {
 	uri       textinput.Model
 	username  textinput.Model
 	password  textinput.Model
-	err       string
+	result    string
 }
 
 func NewPasswordAddModel(a *action.Action) *PasswordAddModel {
@@ -35,7 +35,7 @@ func NewPasswordAddModel(a *action.Action) *PasswordAddModel {
 		uri:       uriInput,
 		username:  usernameInput,
 		password:  passwordInput,
-		err:       "",
+		result:    "",
 	}
 }
 
@@ -79,7 +79,7 @@ func (m *PasswordAddModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return NewPasswordMenuModel(m.action), nil
 			case "SUBMIT":
 				if err := m.action.AddPassword(m.uri.Value(), m.username.Value(), m.password.Value()); err != nil {
-					m.err = err.Error()
+					m.result = err.Error()
 				} else {
 					return NewPasswordMenuModel(m.action), nil
 				}
@@ -120,9 +120,7 @@ func (m *PasswordAddModel) View() string {
 		}
 	}
 
-	if m.err != "" {
-		s += m.err + "\n"
-	}
+	s += m.result
 
 	return s
 }
