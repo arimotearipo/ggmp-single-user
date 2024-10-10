@@ -1,6 +1,8 @@
 package teamodels
 
 import (
+	"fmt"
+
 	"github.com/arimotearipo/ggmp/action"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -9,15 +11,17 @@ type PasswordDeleteModel struct {
 	action    *action.Action
 	menuItems []string
 	menuIdx   int
+	uri       string
+	result    string
 }
 
-func NewPasswordDeleteModel(a *action.Action) *PasswordDeleteModel {
-	uris, _ := a.ListURIs()
-
+func NewPasswordDeleteModel(a *action.Action, uri string) *PasswordDeleteModel {
 	return &PasswordDeleteModel{
 		action:    a,
-		menuItems: append(uris, "BACK"),
-		menuIdx:   0,
+		menuItems: []string{"Yes", "No"},
+		menuIdx:   1,
+		uri:       uri,
+		result:    "",
 	}
 }
 
@@ -40,13 +44,15 @@ func (m *PasswordDeleteModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			selected := m.menuItems[m.menuIdx]
 			switch selected {
-			case "BACK":
-				return NewPasswordMenuModel(m.action), nil
-			default:
-				err := m.action.DeletePassword(selected)
+			case "No":
+				return NewPasswordsListModel(m.action, "Delete password"), nil
+			case "Yes":
+				err := m.action.DeletePassword(m.uri)
 				if err == nil {
-					m.menuItems = append(m.menuItems[:m.menuIdx], m.menuItems[m.menuIdx+1:]...)
+					return NewPasswordsListModel(m.action, "Delete password"), nil
 				}
+				m.result = err.Error()
+				return m, nil
 			}
 		}
 	}
@@ -54,7 +60,7 @@ func (m *PasswordDeleteModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *PasswordDeleteModel) View() string {
-	s := ""
+	s := fmt.Sprintf("Are you sure you want to delete login for %s?\n", m.uri)
 	for i, item := range m.menuItems {
 		if i == m.menuIdx {
 			s += "👉 " + item + "\n"
@@ -62,5 +68,6 @@ func (m *PasswordDeleteModel) View() string {
 			s += "   " + item + "\n"
 		}
 	}
+	s += m.result + "\n"
 	return s
 }

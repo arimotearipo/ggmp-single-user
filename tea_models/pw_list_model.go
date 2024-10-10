@@ -10,16 +10,40 @@ type URI = string
 type PasswordsListModel struct {
 	action    *action.Action
 	uris      []URI
-	selection int
+	selected  int
+	operation string
+	result    string
 }
 
-func NewPasswordsListModel(a *action.Action, prevModel, nextModel tea.Model) *PasswordsListModel {
+func NewPasswordsListModel(a *action.Action, o string) *PasswordsListModel {
 	uris, _ := a.ListURIs()
 	return &PasswordsListModel{
 		action:    a,
 		uris:      append(uris, "BACK"),
-		selection: 0,
+		selected:  0,
+		operation: o,
+		result:    "",
 	}
+}
+
+func (m *PasswordsListModel) handleSelection() tea.Model {
+	selectedUri := m.uris[m.selected]
+
+	switch m.operation {
+	case "Get password":
+		u, p, err := m.action.GetPassword(selectedUri)
+		if err != nil {
+			m.result = err.Error()
+		} else {
+			m.result = "Username: " + u + "\nPassword: " + p
+		}
+	case "Delete password":
+		return NewPasswordDeleteModel(m.action, selectedUri)
+	case "Update password":
+		//todo
+	}
+
+	return m
 }
 
 func (m *PasswordsListModel) Init() tea.Cmd {
@@ -34,17 +58,17 @@ func (m *PasswordsListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "up", "down":
 			if msg.String() == "up" {
-				m.selection = (m.selection - 1 + len(m.uris)) % len(m.uris)
+				m.selected = (m.selected - 1 + len(m.uris)) % len(m.uris)
 			} else if msg.String() == "down" {
-				m.selection = (m.selection + 1) % len(m.uris)
+				m.selected = (m.selected + 1) % len(m.uris)
 			}
 		case "enter":
-			selected := m.uris[m.selection]
+			selected := m.uris[m.selected]
 			switch selected {
 			case "BACK":
-				return m, nil
+				return NewPasswordMenuModel(m.action), nil
 			default:
-				return m, nil
+				return m.handleSelection(), nil
 			}
 		}
 	}
@@ -55,11 +79,12 @@ func (m *PasswordsListModel) View() string {
 	s := ""
 
 	for i, uri := range m.uris {
-		if i == m.selection {
+		if i == m.selected {
 			s += "👉 " + uri + "\n"
 		} else {
 			s += "   " + uri + "\n"
 		}
 	}
+	s += m.result
 	return s
 }

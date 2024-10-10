@@ -9,13 +9,26 @@ type PasswordMenuModel struct {
 	action    *action.Action
 	menuIdx   int
 	menuItems []string
+	selected  string
 }
 
 func NewPasswordMenuModel(c *action.Action) *PasswordMenuModel {
 	return &PasswordMenuModel{
 		action:    c,
-		menuItems: []string{"Get password", "Add password", "Delete password", "Update password", "EXIT"},
+		menuIdx:   0,
+		menuItems: []string{"Get password", "Add password", "Update password", "Delete password", "BACK"},
 	}
+}
+
+func (m *PasswordMenuModel) handleSelection() tea.Model {
+	selected := m.menuItems[m.menuIdx]
+	switch selected {
+	case "Get password", "Update password", "Delete password":
+		return NewPasswordsListModel(m.action, selected)
+	case "Add password":
+		return NewPasswordAddModel(m.action)
+	}
+	return m
 }
 
 func (m *PasswordMenuModel) Init() tea.Cmd {
@@ -28,25 +41,19 @@ func (m *PasswordMenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c", "esc":
 			return m, tea.Quit
-		case "up":
-			m.menuIdx = (m.menuIdx - 1 + len(m.menuItems)) % len(m.menuItems)
-		case "down":
-			m.menuIdx = (m.menuIdx + 1) % len(m.menuItems)
-		case "backspace":
-			m.menuItems[m.menuIdx] = m.menuItems[m.menuIdx][:len(m.menuItems[m.menuIdx])-1]
+		case "up", "down":
+			if msg.String() == "up" {
+				m.menuIdx = (m.menuIdx - 1 + len(m.menuItems)) % len(m.menuItems)
+			} else if msg.String() == "down" {
+				m.menuIdx = (m.menuIdx + 1) % len(m.menuItems)
+			}
 		case "enter":
-			selected := m.menuItems[m.menuIdx]
-			switch selected {
-			case "Add password":
-				return NewPasswordAddModel(m.action), nil
-			case "Get password":
-				return NewPasswordGetModel(m.action), nil
-			case "Delete password":
-				return NewPasswordDeleteModel(m.action), nil
-			case "Update password":
-				return NewPasswordUpdateModel(m.action), nil
-			case "EXIT":
+			m.selected = m.menuItems[m.menuIdx]
+			switch m.selected {
+			case "BACK":
 				return NewAuthMenuModel(m.action), nil
+			default:
+				return m.handleSelection(), nil
 			}
 		}
 	}
