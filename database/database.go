@@ -184,15 +184,18 @@ func (db *Database) GetMasterAccount(username string) (string, []byte, []byte, e
 }
 
 func (db *Database) DeleteMasterAccount(username string) error {
-	deleteMasterAccountQuery := `DELETE FROM master_account WHERE username = ?;`
-	statement, err := db.DB.Prepare(deleteMasterAccountQuery)
+	deleteLoginsQuery := `DELETE FROM accounts WHERE owner = (SELECT id FROM master_account WHERE username = ?);`
+	statement, err := db.DB.Prepare(deleteLoginsQuery)
 	if err != nil {
 		return err
 	}
-	statement.Exec(username)
+	_, err = statement.Exec(username)
+	if err != nil {
+		return err
+	}
 
-	deleteLoginsQuery := `DELETE FROM accounts WHERE username = ?;`
-	statement, err = db.DB.Prepare(deleteLoginsQuery)
+	deleteMasterAccountQuery := `DELETE FROM master_account WHERE username = ?;`
+	statement, err = db.DB.Prepare(deleteMasterAccountQuery)
 	if err != nil {
 		return err
 	}
