@@ -91,26 +91,30 @@ func (c *Action) UpdatePassword(uri, username, password string) error {
 
 // Will prompt the user for username and password and
 // proceeds to compare the hash and password
-func (a *Action) Login(username, password string) (bool, error) {
+func (a *Action) Login(username, password string) error {
 	hashedPassword, initializationVector, salt, err := a.db.GetMasterAccount(username)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	a.e = encryption.NewEncryption([]byte(password), initializationVector, salt)
 
 	id, err := a.db.GetUserId(username)
 	if err != nil {
-		return false, err
+		return err
 	}
-	a.sess = &session{username: username, id: id}
 
-	return true, nil
+	a.sess = &session{username: username, id: id}
+	return nil
+}
+
+func (a *Action) Logout() {
+	a.sess = nil
 }
 
 func (a *Action) Register(username, password string) string {
@@ -140,7 +144,7 @@ func (a *Action) Register(username, password string) string {
 }
 
 func (a *Action) Delete(username, password string) (bool, error) {
-	if ok, err := a.Login(username, password); !ok || err != nil {
+	if err := a.Login(username, password); err != nil {
 		return false, err
 	}
 

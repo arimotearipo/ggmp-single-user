@@ -16,7 +16,7 @@ func NewPasswordMenuModel(c *action.Action) *PasswordMenuModel {
 	return &PasswordMenuModel{
 		action:    c,
 		menuIdx:   0,
-		menuItems: []string{"Get password", "Add password", "Update password", "Delete password", "BACK"},
+		menuItems: []string{"Get password", "Add password", "Update password", "Delete password", "LOGOUT"},
 	}
 }
 
@@ -50,7 +50,8 @@ func (m *PasswordMenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			m.selected = m.menuItems[m.menuIdx]
 			switch m.selected {
-			case "BACK":
+			case "LOGOUT":
+				m.action.Logout()
 				return NewAuthMenuModel(m.action), nil
 			default:
 				return m.handleSelection(), nil

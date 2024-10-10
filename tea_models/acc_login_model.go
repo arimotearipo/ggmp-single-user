@@ -12,6 +12,7 @@ type AccountLoginModel struct {
 	menuItems []string
 	username  textinput.Model
 	password  textinput.Model
+	result    string
 }
 
 func NewAccountLoginModel(a *action.Action) *AccountLoginModel {
@@ -29,6 +30,7 @@ func NewAccountLoginModel(a *action.Action) *AccountLoginModel {
 		menuIdx:   0,
 		username:  usernameInput,
 		password:  passwordInput,
+		result:    "",
 	}
 }
 
@@ -68,11 +70,11 @@ func (m *AccountLoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "BACK":
 				return NewAuthMenuModel(m.action), nil
 			case "SUBMIT":
-				ok, _ := m.action.Login(m.username.Value(), m.password.Value())
-				if ok {
-					return NewPasswordMenuModel(m.action), nil
+				if err := m.action.Login(m.username.Value(), m.password.Value()); err != nil {
+					m.result = err.Error()
+					return m, nil
 				}
-				return m, tea.Quit
+				return NewPasswordMenuModel(m.action), nil
 			}
 
 		}
@@ -103,5 +105,6 @@ func (m *AccountLoginModel) View() string {
 			s += item + "\n"
 		}
 	}
+	s += m.result
 	return s
 }
