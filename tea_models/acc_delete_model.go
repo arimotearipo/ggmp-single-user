@@ -54,7 +54,7 @@ func (m *DeletingAccountModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			switch selected {
 			case "BACK":
-				return NewDeleteAccountModel(m.action), nil
+				return NewAccountDeleteModel(m.action), nil
 			case "SUBMIT":
 				if ok, _ := m.action.Delete(m.user, m.password.Value()); ok {
 					return NewAuthMenuModel(m.action), nil
@@ -90,25 +90,25 @@ func (m *DeletingAccountModel) View() string {
 
 // DeleteAccountModel is the menu for deleting account
 
-type DeleteAccountModel struct {
+type AccountDeleteModel struct {
 	cmd       *action.Action
 	menuItems []string
 	menuIdx   int
 }
 
-func NewDeleteAccountModel(c *action.Action) *DeleteAccountModel {
-	return &DeleteAccountModel{
+func NewAccountDeleteModel(c *action.Action) *AccountDeleteModel {
+	return &AccountDeleteModel{
 		cmd:       c,
 		menuItems: append(c.ListAccounts(), "BACK"),
 		menuIdx:   0,
 	}
 }
 
-func (m *DeleteAccountModel) Init() tea.Cmd {
+func (m *AccountDeleteModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m *DeleteAccountModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *AccountDeleteModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -130,7 +130,7 @@ func (m *DeleteAccountModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m *DeleteAccountModel) View() string {
+func (m *AccountDeleteModel) View() string {
 	s := "Delete account:\n"
 	for idx, item := range m.menuItems {
 		if idx == m.menuIdx {

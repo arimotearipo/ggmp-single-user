@@ -38,13 +38,13 @@ func (m *AuthMenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			switch selectedAction {
 			case "Login":
-				return NewLoginModel(m.action), nil
+				return NewAccountLoginModel(m.action), nil
 			case "Register":
-				return NewRegisterModel(m.action), nil
+				return NewAccountRegisterModel(m.action), nil
 			case "List accounts":
-				return NewListAccountsModel(m.action), nil
+				return NewAccountsListModel(m.action), nil
 			case "Delete account":
-				return NewDeleteAccountModel(m.action), nil
+				return NewAccountDeleteModel(m.action), nil
 			case "EXIT":
 				return m, tea.Quit
 			}

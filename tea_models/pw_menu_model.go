@@ -38,13 +38,13 @@ func (m *PasswordMenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			selected := m.menuItems[m.menuIdx]
 			switch selected {
 			case "Add password":
-				return NewAddPasswordModel(m.action), nil
+				return NewPasswordAddModel(m.action), nil
 			case "Get password":
-				return NewGetPasswordModel(m.action), nil
+				return NewPasswordGetModel(m.action), nil
 			case "Delete password":
-				return NewDeletePasswordModel(m.action), nil
+				return NewPasswordDeleteModel(m.action), nil
 			case "Update password":
-				return NewUpdatePasswordModel(m.action), nil
+				return NewPasswordUpdateModel(m.action), nil
 			case "EXIT":
 				return NewAuthMenuModel(m.action), nil
 			}

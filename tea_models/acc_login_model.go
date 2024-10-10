@@ -6,7 +6,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type LoginModel struct {
+type AccountLoginModel struct {
 	action    *action.Action
 	menuIdx   int
 	menuItems []string
@@ -14,7 +14,7 @@ type LoginModel struct {
 	password  textinput.Model
 }
 
-func NewLoginModel(a *action.Action) *LoginModel {
+func NewAccountLoginModel(a *action.Action) *AccountLoginModel {
 	usernameInput := textinput.New()
 	usernameInput.Placeholder = "Enter username"
 	usernameInput.Focus()
@@ -23,7 +23,7 @@ func NewLoginModel(a *action.Action) *LoginModel {
 	passwordInput.Placeholder = "Enter password"
 	passwordInput.EchoMode = textinput.EchoPassword
 
-	return &LoginModel{
+	return &AccountLoginModel{
 		action:    a,
 		menuItems: []string{"Username", "Password", "SUBMIT", "BACK"},
 		menuIdx:   0,
@@ -32,16 +32,16 @@ func NewLoginModel(a *action.Action) *LoginModel {
 	}
 }
 
-func (m *LoginModel) blurAllInputs() {
+func (m *AccountLoginModel) blurAllInputs() {
 	m.username.Blur()
 	m.password.Blur()
 }
 
-func (m *LoginModel) Init() tea.Cmd {
+func (m *AccountLoginModel) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m *LoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *AccountLoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
@@ -87,7 +87,7 @@ func (m *LoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m *LoginModel) View() string {
+func (m *AccountLoginModel) View() string {
 	s := ""
 	for i, item := range m.menuItems {
 		if i == m.menuIdx {

@@ -6,7 +6,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type AddPasswordModel struct {
+type PasswordAddModel struct {
 	action    *action.Action
 	menuItems []string
 	menuIdx   int
@@ -16,7 +16,7 @@ type AddPasswordModel struct {
 	err       string
 }
 
-func NewAddPasswordModel(a *action.Action) *AddPasswordModel {
+func NewPasswordAddModel(a *action.Action) *PasswordAddModel {
 	uriInput := textinput.New()
 	uriInput.Placeholder = "Enter URI"
 	uriInput.Focus()
@@ -28,7 +28,7 @@ func NewAddPasswordModel(a *action.Action) *AddPasswordModel {
 	passwordInput.Placeholder = "Enter password"
 	passwordInput.EchoMode = textinput.EchoPassword
 
-	return &AddPasswordModel{
+	return &PasswordAddModel{
 		action:    a,
 		menuItems: []string{"URI", "Username", "Password", "SUBMIT", "BACK"},
 		menuIdx:   0,
@@ -39,17 +39,17 @@ func NewAddPasswordModel(a *action.Action) *AddPasswordModel {
 	}
 }
 
-func (m *AddPasswordModel) blurAllInputs() {
+func (m *PasswordAddModel) blurAllInputs() {
 	m.username.Blur()
 	m.password.Blur()
 	m.uri.Blur()
 }
 
-func (m *AddPasswordModel) Init() tea.Cmd {
+func (m *PasswordAddModel) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m *AddPasswordModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *PasswordAddModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
@@ -99,7 +99,7 @@ func (m *AddPasswordModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m *AddPasswordModel) View() string {
+func (m *PasswordAddModel) View() string {
 	s := ""
 	for i, item := range m.menuItems {
 		if i == m.menuIdx {

@@ -6,7 +6,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type RegisterModel struct {
+type AccountRegisterModel struct {
 	action          *action.Action
 	menuIdx         int
 	menuItems       []string
@@ -16,13 +16,13 @@ type RegisterModel struct {
 	err             string
 }
 
-func (m *RegisterModel) blurAllInputs() {
+func (m *AccountRegisterModel) blurAllInputs() {
 	m.username.Blur()
 	m.password.Blur()
 	m.confirmPassword.Blur()
 }
 
-func (m *RegisterModel) validatePasswords() {
+func (m *AccountRegisterModel) validatePasswords() {
 	if m.password.Value() != m.confirmPassword.Value() {
 		m.err = "Passwords does not match"
 	} else {
@@ -30,7 +30,7 @@ func (m *RegisterModel) validatePasswords() {
 	}
 }
 
-func NewRegisterModel(c *action.Action) *RegisterModel {
+func NewAccountRegisterModel(c *action.Action) *AccountRegisterModel {
 	usernameInput := textinput.New()
 	usernameInput.Placeholder = "Enter username"
 	usernameInput.Focus()
@@ -43,7 +43,7 @@ func NewRegisterModel(c *action.Action) *RegisterModel {
 	confirmPasswordInput.Placeholder = "Confirm password"
 	confirmPasswordInput.EchoMode = textinput.EchoPassword
 
-	m := &RegisterModel{
+	m := &AccountRegisterModel{
 		action:          c,
 		menuIdx:         0,
 		menuItems:       []string{"Username", "Password", "Confirm Password", "SUBMIT", "BACK"},
@@ -65,11 +65,11 @@ func NewRegisterModel(c *action.Action) *RegisterModel {
 	return m
 }
 
-func (m *RegisterModel) Init() tea.Cmd {
+func (m *AccountRegisterModel) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m *RegisterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *AccountRegisterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -123,7 +123,7 @@ func (m *RegisterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m *RegisterModel) View() string {
+func (m *AccountRegisterModel) View() string {
 	s := ""
 	for i, item := range m.menuItems {
 		if i == m.menuIdx {

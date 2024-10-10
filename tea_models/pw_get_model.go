@@ -5,17 +5,17 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type GetPasswordModel struct {
+type PasswordGetModel struct {
 	action      *action.Action
 	menuItems   []string
 	menuIdx     int
 	loginDetail [2]string
 }
 
-func NewGetPasswordModel(a *action.Action) *GetPasswordModel {
+func NewPasswordGetModel(a *action.Action) *PasswordGetModel {
 	uris, _ := a.ListURIs()
 
-	return &GetPasswordModel{
+	return &PasswordGetModel{
 		action:      a,
 		menuItems:   append(uris, "BACK"),
 		menuIdx:     0,
@@ -23,11 +23,11 @@ func NewGetPasswordModel(a *action.Action) *GetPasswordModel {
 	}
 }
 
-func (m *GetPasswordModel) Init() tea.Cmd {
+func (m *PasswordGetModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m *GetPasswordModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *PasswordGetModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
@@ -58,7 +58,7 @@ func (m *GetPasswordModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m *GetPasswordModel) View() string {
+func (m *PasswordGetModel) View() string {
 	s := ""
 	for i, item := range m.menuItems {
 		if i == m.menuIdx {

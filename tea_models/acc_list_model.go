@@ -5,24 +5,24 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type ListAccountsModel struct {
+type AccountsListModel struct {
 	cmd       *action.Action
 	menuIdx   int
 	menuItems []string
 }
 
-func NewListAccountsModel(c *action.Action) *ListAccountsModel {
-	return &ListAccountsModel{
+func NewAccountsListModel(c *action.Action) *AccountsListModel {
+	return &AccountsListModel{
 		cmd:       c,
 		menuItems: append(c.ListAccounts(), "BACK"),
 	}
 }
 
-func (m *ListAccountsModel) Init() tea.Cmd {
+func (m *AccountsListModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m *ListAccountsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *AccountsListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -42,7 +42,7 @@ func (m *ListAccountsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m *ListAccountsModel) View() string {
+func (m *AccountsListModel) View() string {
 	s := ""
 	for idx, item := range m.menuItems {
 		if idx == m.menuIdx {

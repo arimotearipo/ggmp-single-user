@@ -5,30 +5,28 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type ListPasswordsModel struct {
+type URI = string
+
+type PasswordsListModel struct {
 	action    *action.Action
-	menuItems []string
-	menuIdx   int
-	prevModel tea.Model
-	nextModel tea.Model
+	uris      []URI
+	selection int
 }
 
-func NewListPasswordsModel(a *action.Action, prevModel, nextModel tea.Model) *ListPasswordsModel {
+func NewPasswordsListModel(a *action.Action, prevModel, nextModel tea.Model) *PasswordsListModel {
 	uris, _ := a.ListURIs()
-	return &ListPasswordsModel{
+	return &PasswordsListModel{
 		action:    a,
-		menuItems: append(uris, "BACK"),
-		menuIdx:   0,
-		prevModel: prevModel,
-		nextModel: nextModel,
+		uris:      append(uris, "BACK"),
+		selection: 0,
 	}
 }
 
-func (m *ListPasswordsModel) Init() tea.Cmd {
+func (m *PasswordsListModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m *ListPasswordsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *PasswordsListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -36,31 +34,31 @@ func (m *ListPasswordsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "up", "down":
 			if msg.String() == "up" {
-				m.menuIdx = (m.menuIdx - 1 + len(m.menuItems)) % len(m.menuItems)
+				m.selection = (m.selection - 1 + len(m.uris)) % len(m.uris)
 			} else if msg.String() == "down" {
-				m.menuIdx = (m.menuIdx + 1) % len(m.menuItems)
+				m.selection = (m.selection + 1) % len(m.uris)
 			}
 		case "enter":
-			selected := m.menuItems[m.menuIdx]
+			selected := m.uris[m.selection]
 			switch selected {
 			case "BACK":
-				return m.prevModel, nil
+				return m, nil
 			default:
-				return m.nextModel, nil
+				return m, nil
 			}
 		}
 	}
 	return m, nil
 }
 
-func (m *ListPasswordsModel) View() string {
+func (m *PasswordsListModel) View() string {
 	s := ""
 
-	for i, item := range m.menuItems {
-		if i == m.menuIdx {
-			s += "👉 " + item + "\n"
+	for i, uri := range m.uris {
+		if i == m.selection {
+			s += "👉 " + uri + "\n"
 		} else {
-			s += "   " + item + "\n"
+			s += "   " + uri + "\n"
 		}
 	}
 	return s

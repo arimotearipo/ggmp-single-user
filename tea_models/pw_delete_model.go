@@ -5,27 +5,27 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type DeletePasswordModel struct {
+type PasswordDeleteModel struct {
 	action    *action.Action
 	menuItems []string
 	menuIdx   int
 }
 
-func NewDeletePasswordModel(a *action.Action) *DeletePasswordModel {
+func NewPasswordDeleteModel(a *action.Action) *PasswordDeleteModel {
 	uris, _ := a.ListURIs()
 
-	return &DeletePasswordModel{
+	return &PasswordDeleteModel{
 		action:    a,
 		menuItems: append(uris, "BACK"),
 		menuIdx:   0,
 	}
 }
 
-func (m *DeletePasswordModel) Init() tea.Cmd {
+func (m *PasswordDeleteModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m *DeletePasswordModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *PasswordDeleteModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -53,7 +53,7 @@ func (m *DeletePasswordModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m *DeletePasswordModel) View() string {
+func (m *PasswordDeleteModel) View() string {
 	s := ""
 	for i, item := range m.menuItems {
 		if i == m.menuIdx {
