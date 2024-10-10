@@ -7,36 +7,38 @@ import (
 )
 
 type PasswordUpdateModel struct {
-	action    *action.Action
-	menuItems []string
-	menuIdx   int
-	uri       textinput.Model
-	username  textinput.Model
-	password  textinput.Model
-	result    string
+	action      *action.Action
+	menuItems   []string
+	menuIdx     int
+	selectedUri string
+	username    textinput.Model
+	password    textinput.Model
+	result      string
 }
 
-func NewPasswordUpdateModel(a *action.Action) *PasswordUpdateModel {
-	uriInput := textinput.New()
-	uriInput.Placeholder = "Enter URI"
-	uriInput.Focus()
-
+func NewPasswordUpdateModel(a *action.Action, selectedUri string) *PasswordUpdateModel {
 	usernameInput := textinput.New()
 	usernameInput.Placeholder = "Enter username"
+	usernameInput.Focus()
 
 	passwordInput := textinput.New()
 	passwordInput.Placeholder = "Enter password"
 	passwordInput.EchoMode = textinput.EchoPassword
 
 	return &PasswordUpdateModel{
-		action:    a,
-		menuItems: []string{"URI", "Username", "Password", "UPDATE", "BACK"},
-		menuIdx:   0,
-		uri:       uriInput,
-		username:  usernameInput,
-		password:  passwordInput,
-		result:    "",
+		action:      a,
+		menuItems:   []string{"Username", "Password", "UPDATE", "BACK"},
+		menuIdx:     0,
+		selectedUri: selectedUri,
+		username:    usernameInput,
+		password:    passwordInput,
+		result:      "",
 	}
+}
+
+func (m *PasswordUpdateModel) blurAllInputs() {
+	m.username.Blur()
+	m.password.Blur()
 }
 
 func (m *PasswordUpdateModel) Init() tea.Cmd {
@@ -57,13 +59,20 @@ func (m *PasswordUpdateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else {
 				m.menuIdx = (m.menuIdx + 1) % len(m.menuItems)
 			}
+
+			m.blurAllInputs()
+			if m.menuIdx == 0 {
+				m.username.Focus()
+			} else if m.menuIdx == 1 {
+				m.password.Focus()
+			}
 		case "enter":
 			selected := m.menuItems[m.menuIdx]
 			switch selected {
 			case "BACK":
 				return NewPasswordsListModel(m.action, "Update password"), nil
 			case "UPDATE":
-				if err := m.action.UpdatePassword(m.uri.Value(), m.username.Value(), m.password.Value()); err != nil {
+				if err := m.action.UpdatePassword(m.selectedUri, m.username.Value(), m.password.Value()); err != nil {
 					m.result = err.Error()
 				} else {
 					return NewPasswordsListModel(m.action, "Update password"), nil
@@ -74,8 +83,6 @@ func (m *PasswordUpdateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	selected := m.menuItems[m.menuIdx]
 	switch selected {
-	case "URI":
-		m.uri, cmd = m.uri.Update(msg)
 	case "Username":
 		m.username, cmd = m.username.Update(msg)
 	case "Password":
@@ -89,9 +96,18 @@ func (m *PasswordUpdateModel) View() string {
 	s := ""
 	for i, item := range m.menuItems {
 		if i == m.menuIdx {
-			s += "👉 " + item + "\n"
+			s += "👉 "
 		} else {
-			s += "   " + item + "\n"
+			s += "   "
+		}
+
+		switch item {
+		case "Username":
+			s += m.username.View() + "\n"
+		case "Password":
+			s += m.password.View() + "\n"
+		default:
+			s += item + "\n"
 		}
 	}
 	s += m.result

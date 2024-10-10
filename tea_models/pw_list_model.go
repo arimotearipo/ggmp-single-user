@@ -40,7 +40,7 @@ func (m *PasswordsListModel) handleSelection() tea.Model {
 	case "Delete password":
 		return NewPasswordDeleteModel(m.action, selectedUri)
 	case "Update password":
-		//todo
+		return NewPasswordUpdateModel(m.action, selectedUri)
 	}
 
 	return m
