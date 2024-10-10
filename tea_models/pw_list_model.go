@@ -76,8 +76,7 @@ func (m *PasswordsListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *PasswordsListModel) View() string {
-	s := ""
-
+	s := "Listing saved login details\n"
 	for i, uri := range m.uris {
 		if i == m.selected {
 			s += "👉 " + uri + "\n"

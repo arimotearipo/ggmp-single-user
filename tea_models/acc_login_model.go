@@ -88,7 +88,7 @@ func (m *AccountLoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *AccountLoginModel) View() string {
-	s := ""
+	s := "Enter your credentials\n"
 	for i, item := range m.menuItems {
 		if i == m.menuIdx {
 			s += "👉 "

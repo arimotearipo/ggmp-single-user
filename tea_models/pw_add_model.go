@@ -100,7 +100,7 @@ func (m *PasswordAddModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *PasswordAddModel) View() string {
-	s := ""
+	s := "Add new login details to save\n"
 	for i, item := range m.menuItems {
 		if i == m.menuIdx {
 			s += "👉 "

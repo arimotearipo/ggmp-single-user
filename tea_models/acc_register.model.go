@@ -124,7 +124,7 @@ func (m *AccountRegisterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *AccountRegisterModel) View() string {
-	s := ""
+	s := "Register for account\n"
 	for i, item := range m.menuItems {
 		if i == m.menuIdx {
 			s += "👉 "

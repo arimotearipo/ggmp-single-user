@@ -131,7 +131,7 @@ func (m *AccountDeleteModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *AccountDeleteModel) View() string {
-	s := "Delete account:\n"
+	s := "Select an account to delete\n"
 	for idx, item := range m.menuItems {
 		if idx == m.menuIdx {
 			s += "❌ " + item + "\n"

@@ -61,7 +61,7 @@ func (m *PasswordMenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *PasswordMenuModel) View() string {
-	s := ""
+	s := "Select an option\n"
 	for i, item := range m.menuItems {
 		if i == m.menuIdx {
 			s += "👉 " + item + "\n"

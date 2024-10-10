@@ -43,7 +43,7 @@ func (m *AccountsListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *AccountsListModel) View() string {
-	s := ""
+	s := "Listing registered accounts\n"
 	for idx, item := range m.menuItems {
 		if idx == m.menuIdx {
 			s += "👉 " + item + "\n"
