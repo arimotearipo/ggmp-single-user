@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 type Database struct {
@@ -15,7 +15,7 @@ type Database struct {
 
 func NewDatabase(name string) *Database {
 	// connecting to database
-	DB, err := sql.Open("sqlite3", name)
+	DB, err := sql.Open("sqlite", name)
 	if err != nil {
 		log.Fatal("Fail to connect to database")
 	}
