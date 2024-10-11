@@ -30,12 +30,13 @@ This password manager allows users to store, retrieve, and manage their password
 
 This project requires the following dependencies:
 
-- Go 1.13 or later
+- Go 1.23.1 or later
 - github.com/mattn/go-sqlite3
 - golang.org/x/crypto/pbkdf2
 - golang.org/x/crypto/bcrypt
 - github.com/charmbracelet/bubbletea
-- github.com/charmbracelet/bubbles/textinput
+- github.com/charmbracelet/bubbles
+- modernc.org/sqlite
 
 To install these dependencies, run:
 
@@ -44,15 +45,19 @@ go get github.com/mattn/go-sqlite3
 go get golang.org/x/crypto/pbkdf2
 go get golang.org/x/crypto/bcrypt
 go get github.com/charmbracelet/bubbletea
-go get github.com/charmbracelet/bubbles/textinput
+go get github.com/charmbracelet/bubbles
+go get modernc.org/sqlite
 ```
 
 ## Security
 
 ---
 
-- Passwords are stored securely using AES encryption
-- Users are prompted to enter a master password to access the password manager
+- Passwords are stored securely using AES encryption.
+- AES encryption is used with GCM (Galois/Counter Mode) for ensuring data integrity and confidentiality.
+- A unique salt is generated for each password, and Argon2 is used for key derivation to protect against brute-force attacks.
+- Users are prompted to enter a master password to access the password manager.
+- The master password is used to derive an encryption key using Argon2, ensuring that the key is unique and secure.
 
 ## Contributing
 
