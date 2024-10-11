@@ -11,10 +11,12 @@ type AccountsListModel struct {
 	menuItems []string
 }
 
-func NewAccountsListModel(c *action.Action) *AccountsListModel {
+func NewAccountsListModel(a *action.Action) *AccountsListModel {
+	accounts, _ := a.ListAccounts()
+
 	return &AccountsListModel{
-		cmd:       c,
-		menuItems: append(c.ListAccounts(), "BACK"),
+		cmd:       a,
+		menuItems: append(accounts, "BACK"),
 	}
 }
 

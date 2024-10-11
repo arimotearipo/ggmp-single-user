@@ -1,10 +1,6 @@
 package action
 
 import (
-	"crypto/aes"
-	"crypto/rand"
-	"fmt"
-
 	"github.com/arimotearipo/ggmp/database"
 	"github.com/arimotearipo/ggmp/encryption"
 
@@ -12,23 +8,23 @@ import (
 )
 
 type session struct {
-	username string
-	id       int
+	username       string
+	masterPassword string
+	id             int
 }
 
 type Action struct {
-	e    *encryption.Encryption
 	db   *database.Database
 	sess *session
 }
 
 func NewAction(db *database.Database) *Action {
-	return &Action{e: nil, db: db, sess: nil}
+	return &Action{db: db, sess: nil}
 }
 
 // === LOGINS ====
 func (a *Action) AddPassword(uri, username, password string) error {
-	encryptedPassword, err := a.e.Encrypt(password)
+	encryptedPassword, err := encryption.Encrypt(password, a.sess.masterPassword)
 	if err != nil {
 		return err
 	}
@@ -47,7 +43,7 @@ func (a *Action) GetPassword(uri string) (string, string, error) {
 		return "", "", err
 	}
 
-	password, err := a.e.Decrypt(encryptedPassword)
+	password, err := encryption.Decrypt(encryptedPassword, a.sess.masterPassword)
 	if err != nil {
 		return "", "", err
 	}
@@ -73,13 +69,13 @@ func (a *Action) DeletePassword(uri string) error {
 	return nil
 }
 
-func (c *Action) UpdatePassword(uri, username, password string) error {
-	hashed_password, err := c.e.Encrypt(password)
+func (a *Action) UpdatePassword(uri, username, password string) error {
+	hashed_password, err := encryption.Encrypt(password, a.sess.masterPassword)
 	if err != nil {
 		return err
 	}
 
-	err = c.db.UpdatePassword(uri, username, hashed_password)
+	err = a.db.UpdatePassword(uri, username, hashed_password)
 	if err != nil {
 		return err
 	}
@@ -92,7 +88,7 @@ func (c *Action) UpdatePassword(uri, username, password string) error {
 // Will prompt the user for username and password and
 // proceeds to compare the hash and password
 func (a *Action) Login(username, password string) error {
-	hashedPassword, initializationVector, salt, err := a.db.GetMasterAccount(username)
+	hashedPassword, err := a.db.GetMasterAccount(username)
 	if err != nil {
 		return err
 	}
@@ -102,40 +98,34 @@ func (a *Action) Login(username, password string) error {
 		return err
 	}
 
-	a.e = encryption.NewEncryption([]byte(password), initializationVector, salt)
-
 	id, err := a.db.GetUserId(username)
 	if err != nil {
 		return err
 	}
 
-	a.sess = &session{username: username, id: id}
+	a.sess = &session{
+		username:       username,
+		masterPassword: password,
+		id:             id,
+	}
+
 	return nil
 }
 
 func (a *Action) Logout() {
+	a.sess.username = ""
+	a.sess.masterPassword = ""
+	a.sess.id = -1
 	a.sess = nil
 }
 
 func (a *Action) Register(username, password string) string {
-	initializationVector := make([]byte, aes.BlockSize)
-	_, err := rand.Read(initializationVector)
-	if err != nil {
-		return err.Error()
-	}
-
-	salt := make([]byte, 16)
-	_, err = rand.Read(salt)
-	if err != nil {
-		return err.Error()
-	}
-
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 12)
 	if err != nil {
 		return err.Error()
 	}
 
-	err = a.db.AddMasterAccount(username, string(hashedPassword), initializationVector, salt)
+	err = a.db.AddMasterAccount(username, string(hashedPassword))
 	if err != nil {
 		return err.Error()
 	}
@@ -156,12 +146,11 @@ func (a *Action) Delete(username, password string) (bool, error) {
 	return true, nil
 }
 
-func (a *Action) ListAccounts() []string {
+func (a *Action) ListAccounts() ([]string, error) {
 	accounts, err := a.db.ListMasterAccounts()
 	if err != nil {
-		fmt.Println(err)
-		return nil
+		return nil, err
 	}
 
-	return accounts
+	return accounts, nil
 }

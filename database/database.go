@@ -3,7 +3,6 @@ package database
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"log"
 
 	_ "modernc.org/sqlite"
@@ -25,9 +24,7 @@ func NewDatabase(name string) *Database {
 	createMasterAccountSchema := `CREATE TABLE IF NOT EXISTS master_account (
 		"id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
 		"username" TEXT UNIQUE,
-		"hashed_password" TEXT,
-		"initialization_vector" BLOB NOT NULL,
-		"salt" BLOB NOT NULL
+		"hashed_password" TEXT(60)
 	);`
 	statement, err := DB.Prepare(createMasterAccountSchema)
 	if err != nil {
@@ -43,7 +40,7 @@ func NewDatabase(name string) *Database {
 		"owner" REFERENCES master_account (id),
 		"uri" TEXT,
 		"username" TEXT,
-		"encrypted_password" TEXT
+		"encryption" TEXT
 	);`
 	statement, err = DB.Prepare(createAccountsSchema)
 	if err != nil {
@@ -60,19 +57,19 @@ func (db *Database) Close() {
 	db.DB.Close()
 }
 
-func (db *Database) AddPassword(id int, uri, username, encryptedPassword string) error {
-	insertAccountQuery := `INSERT INTO accounts (owner, uri, username, encrypted_password) VALUES (?, ?, ?, ?);`
+func (db *Database) AddPassword(id int, uri, username, encryption string) error {
+	insertAccountQuery := `INSERT INTO accounts (owner, uri, username, encryption) VALUES (?, ?, ?, ?);`
 	statement, err := db.DB.Prepare(insertAccountQuery)
 	if err != nil {
 		return err
 	}
 
-	statement.Exec(id, uri, username, encryptedPassword)
+	statement.Exec(id, uri, username, encryption)
 	return nil
 }
 
 func (db *Database) GetPassword(uri string, id int) (string, string, error) {
-	selectAccountQuery := `SELECT username, encrypted_password FROM accounts WHERE uri = ? AND owner = ?;`
+	selectAccountQuery := `SELECT username, encryption FROM accounts WHERE uri = ? AND owner = ?;`
 	statement, err := db.DB.Prepare(selectAccountQuery)
 
 	if err != nil {
@@ -128,27 +125,26 @@ func (db *Database) DeleteAccount(uri string, id int) error {
 	return nil
 }
 
-func (db *Database) UpdatePassword(uri string, username string, encryptedPassword string) error {
-	updateAccountQuery := `UPDATE accounts SET username = ?, encrypted_password = ? WHERE uri = ?;`
+func (db *Database) UpdatePassword(uri string, username string, encryption string) error {
+	updateAccountQuery := `UPDATE accounts SET username = ?, encryption = ? WHERE uri = ?;`
 	statement, err := db.DB.Prepare(updateAccountQuery)
 
 	if err != nil {
 		return err
 	}
 
-	statement.Exec(username, encryptedPassword, uri)
+	statement.Exec(username, encryption, uri)
 	return nil
 }
 
-func (db *Database) AddMasterAccount(username string, hashedPassword string, initializationVector, salt []byte) error {
-	insertMasterAccountQuery := `INSERT INTO master_account (username, hashed_password, initialization_vector, salt) VALUES (?, ?, ?, ?);`
+func (db *Database) AddMasterAccount(username string, hashedPassword string) error {
+	insertMasterAccountQuery := `INSERT INTO master_account (username, hashed_password) VALUES (?, ?);`
 	statement, err := db.DB.Prepare(insertMasterAccountQuery)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 
-	_, err = statement.Exec(username, hashedPassword, initializationVector, salt)
+	_, err = statement.Exec(username, hashedPassword)
 	if err != nil {
 		return err
 	}
@@ -156,31 +152,28 @@ func (db *Database) AddMasterAccount(username string, hashedPassword string, ini
 	return nil
 }
 
-func (db *Database) GetMasterAccount(username string) (string, []byte, []byte, error) {
+func (db *Database) GetMasterAccount(username string) (string, error) {
 	selectMasterAccountQuery := `SELECT COUNT(*) FROM master_account WHERE username = ?;`
 	statement, err := db.DB.Prepare(selectMasterAccountQuery)
 	if err != nil {
-		fmt.Println(err)
-		return "", nil, nil, err
+		return "", err
 	}
 
 	var count int
 	statement.QueryRow(username).Scan(&count)
 	if count == 0 {
-		return "", nil, nil, errors.New("username does not exist")
+		return "", errors.New("username does not exist")
 	}
 
-	selectMasterAccountQuery = `SELECT hashed_password, initialization_vector, salt FROM master_account WHERE username = ?;`
+	selectMasterAccountQuery = `SELECT hashed_password FROM master_account WHERE username = ?;`
 	statement, err = db.DB.Prepare(selectMasterAccountQuery)
 	if err != nil {
-		fmt.Println(err)
-		return "", nil, nil, err
+		return "", err
 	}
 
 	var hashedPassword string
-	var initializationVector, salt []byte
-	statement.QueryRow(username).Scan(&hashedPassword, &initializationVector, &salt)
-	return hashedPassword, initializationVector, salt, nil
+	statement.QueryRow(username).Scan(&hashedPassword)
+	return hashedPassword, nil
 }
 
 func (db *Database) DeleteMasterAccount(username string) error {
@@ -211,13 +204,11 @@ func (db *Database) ListMasterAccounts() ([]string, error) {
 	selectMasterAccountQuery := `SELECT username FROM master_account;`
 	statement, err := db.DB.Prepare(selectMasterAccountQuery)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 
 	rows, err := statement.Query()
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 

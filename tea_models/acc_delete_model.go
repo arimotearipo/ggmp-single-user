@@ -96,10 +96,12 @@ type AccountDeleteModel struct {
 	menuIdx   int
 }
 
-func NewAccountDeleteModel(c *action.Action) *AccountDeleteModel {
+func NewAccountDeleteModel(a *action.Action) *AccountDeleteModel {
+	accounts, _ := a.ListAccounts()
+
 	return &AccountDeleteModel{
-		cmd:       c,
-		menuItems: append(c.ListAccounts(), "BACK"),
+		cmd:       a,
+		menuItems: append(accounts, "BACK"),
 		menuIdx:   0,
 	}
 }

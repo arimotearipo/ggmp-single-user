@@ -3,76 +3,87 @@ package encryption
 import (
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/sha256"
+	"crypto/rand"
 	"encoding/base64"
-	"log"
 
-	"golang.org/x/crypto/pbkdf2"
+	"golang.org/x/crypto/argon2"
 )
 
-type Encryption struct {
-	InitalizationVector []byte
-	Block               cipher.Block
-	secret              []byte
+func deriveKey(password []byte, salt []byte) []byte {
+	time := uint32(1)
+	memory := uint32(64 * 1024)
+	threads := uint8(4)
+	keyLen := uint32(32)
+
+	return argon2.IDKey(password, salt, time, memory, threads, keyLen)
 }
 
-func newAESCipherBlock(secret []byte) (cipher.Block, error) {
-	block, err := aes.NewCipher(secret)
-
+func Decrypt(encrypted string, masterPassword string) (string, error) {
+	// Decode the encrypted string to bytes
+	decoded, err := base64.StdEncoding.DecodeString(encrypted)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	return block, nil
-}
+	// Extract salt, IV and encryption bytes
+	salt := decoded[:16]
+	initializationVector := decoded[16:28]
+	encryptionBytes := decoded[28:]
 
-func encode(b []byte) string {
-	return base64.StdEncoding.EncodeToString(b)
-}
+	// Derive key using master password
+	key := deriveKey([]byte(masterPassword), []byte(salt))
 
-// Encrypt method is to encrypt or hide any classified text
-func (c *Encryption) Encrypt(text string) (string, error) {
-	plainText := []byte(text)
-	cfb := cipher.NewCFBEncrypter(c.Block, c.InitalizationVector)
-	cipherText := make([]byte, len(plainText))
-	cfb.XORKeyStream(cipherText, plainText)
-
-	return encode(cipherText), nil
-}
-
-func decode(s string) []byte {
-	data, err := base64.StdEncoding.DecodeString(s)
+	// Create cipher block
+	block, err := aes.NewCipher(key)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
-	return data
-}
 
-// Decrypt method is to extract back the encrypted text
-func (c *Encryption) Decrypt(text string) (string, error) {
-	cipherText := decode(text)
-	cfb := cipher.NewCFBDecrypter(c.Block, c.InitalizationVector)
-	plainText := make([]byte, len(cipherText))
-	cfb.XORKeyStream(plainText, cipherText)
+	// Create GCM
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", err
+	}
+
+	// Decrypt
+	plainText, err := gcm.Open(nil, initializationVector, encryptionBytes, nil)
+	if err != nil {
+		return "", err
+	}
 
 	return string(plainText), nil
 }
 
-func deriveKey(password, salt []byte) []byte {
-	return pbkdf2.Key(password, salt, 1000000, 32, sha256.New)
-}
+func Encrypt(password, masterPassword string) (ciphertText string, err error) {
+	salt := make([]byte, 16)
+	if _, err := rand.Read(salt); err != nil {
+		return "", err
+	}
 
-func NewEncryption(masterPassword, initializationVector, salt []byte) *Encryption {
-	secret := deriveKey(masterPassword, salt)
+	// Derive key from master password
+	key := deriveKey([]byte(masterPassword), salt)
 
-	block, err := newAESCipherBlock(secret)
+	// Create cipher block
+	block, err := aes.NewCipher(key)
 	if err != nil {
-		log.Fatal("Fail to create block")
+		return "", err
 	}
 
-	return &Encryption{
-		InitalizationVector: initializationVector,
-		Block:               block,
-		secret:              secret,
+	// Create GCM
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", err
 	}
+
+	// Create IV (also known as nonce)
+	initializationVector := make([]byte, gcm.NonceSize())
+	if _, err := rand.Read(initializationVector); err != nil {
+		return "", err
+	}
+
+	// Encrypt. The initializationVector will prepended to the ciphertext
+	ciphertext := gcm.Seal(initializationVector, initializationVector, []byte(password), nil)
+
+	// Combine salt and ciphertext, then encode
+	return base64.StdEncoding.EncodeToString(append(salt, ciphertext...)), nil
 }
