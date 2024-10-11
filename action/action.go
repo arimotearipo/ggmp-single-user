@@ -1,6 +1,8 @@
 package action
 
 import (
+	"crypto/rand"
+
 	"github.com/arimotearipo/ggmp/database"
 	"github.com/arimotearipo/ggmp/encryption"
 
@@ -8,9 +10,9 @@ import (
 )
 
 type session struct {
-	username       string
-	masterPassword string
-	id             int
+	username  string
+	masterKey []byte
+	id        int
 }
 
 type Action struct {
@@ -24,7 +26,7 @@ func NewAction(db *database.Database) *Action {
 
 // === LOGINS ====
 func (a *Action) AddPassword(uri, username, password string) error {
-	encryptedPassword, err := encryption.Encrypt(password, a.sess.masterPassword)
+	encryptedPassword, err := encryption.Encrypt(password, a.sess.masterKey)
 	if err != nil {
 		return err
 	}
@@ -43,7 +45,7 @@ func (a *Action) GetPassword(uri string) (string, string, error) {
 		return "", "", err
 	}
 
-	password, err := encryption.Decrypt(encryptedPassword, a.sess.masterPassword)
+	password, err := encryption.Decrypt(encryptedPassword, a.sess.masterKey)
 	if err != nil {
 		return "", "", err
 	}
@@ -70,7 +72,7 @@ func (a *Action) DeletePassword(uri string) error {
 }
 
 func (a *Action) UpdatePassword(uri, username, password string) error {
-	hashed_password, err := encryption.Encrypt(password, a.sess.masterPassword)
+	hashed_password, err := encryption.Encrypt(password, a.sess.masterKey)
 	if err != nil {
 		return err
 	}
@@ -88,7 +90,7 @@ func (a *Action) UpdatePassword(uri, username, password string) error {
 // Will prompt the user for username and password and
 // proceeds to compare the hash and password
 func (a *Action) Login(username, password string) error {
-	hashedPassword, err := a.db.GetMasterAccount(username)
+	hashedPassword, salt, err := a.db.GetMasterAccount(username)
 	if err != nil {
 		return err
 	}
@@ -103,18 +105,16 @@ func (a *Action) Login(username, password string) error {
 		return err
 	}
 
-	a.sess = &session{
-		username:       username,
-		masterPassword: password,
-		id:             id,
-	}
+	masterKey := encryption.DeriveKey([]byte(password), salt)
+
+	a.sess = &session{username, masterKey, id}
 
 	return nil
 }
 
 func (a *Action) Logout() {
 	a.sess.username = ""
-	a.sess.masterPassword = ""
+	a.sess.masterKey = nil
 	a.sess.id = -1
 	a.sess = nil
 }
@@ -125,7 +125,12 @@ func (a *Action) Register(username, password string) string {
 		return err.Error()
 	}
 
-	err = a.db.AddMasterAccount(username, string(hashedPassword))
+	salt := make([]byte, 16)
+	if _, err := rand.Read(salt); err != nil {
+		return err.Error()
+	}
+
+	err = a.db.AddMasterAccount(username, string(hashedPassword), salt)
 	if err != nil {
 		return err.Error()
 	}

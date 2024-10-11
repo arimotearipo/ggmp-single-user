@@ -44,3 +44,6 @@ test:
 # Run the application (uses local build)
 run: 
 	go run $(MAIN_PATH)
+
+cleardb:
+	rm ggmp.db

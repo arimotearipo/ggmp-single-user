@@ -9,7 +9,7 @@ import (
 	"golang.org/x/crypto/argon2"
 )
 
-func deriveKey(password []byte, salt []byte) []byte {
+func DeriveKey(password []byte, salt []byte) []byte {
 	time := uint32(1)
 	memory := uint32(64 * 1024)
 	threads := uint8(4)
@@ -18,7 +18,7 @@ func deriveKey(password []byte, salt []byte) []byte {
 	return argon2.IDKey(password, salt, time, memory, threads, keyLen)
 }
 
-func Decrypt(encrypted string, masterPassword string) (string, error) {
+func Decrypt(encrypted string, masterKey []byte) (string, error) {
 	// Decode the encrypted string to bytes
 	decoded, err := base64.StdEncoding.DecodeString(encrypted)
 	if err != nil {
@@ -31,7 +31,7 @@ func Decrypt(encrypted string, masterPassword string) (string, error) {
 	encryptionBytes := decoded[28:]
 
 	// Derive key using master password
-	key := deriveKey([]byte(masterPassword), []byte(salt))
+	key := DeriveKey(masterKey, []byte(salt))
 
 	// Create cipher block
 	block, err := aes.NewCipher(key)
@@ -54,14 +54,14 @@ func Decrypt(encrypted string, masterPassword string) (string, error) {
 	return string(plainText), nil
 }
 
-func Encrypt(password, masterPassword string) (ciphertText string, err error) {
+func Encrypt(password string, masterKey []byte) (ciphertText string, err error) {
 	salt := make([]byte, 16)
 	if _, err := rand.Read(salt); err != nil {
 		return "", err
 	}
 
 	// Derive key from master password
-	key := deriveKey([]byte(masterPassword), salt)
+	key := DeriveKey(masterKey, salt)
 
 	// Create cipher block
 	block, err := aes.NewCipher(key)
