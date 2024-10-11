@@ -9,14 +9,25 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func main() {
+const ggmp string = "\n\n" + `      ::::::::   ::::::::    :::   :::   :::::::::
+    :+:    :+: :+:    :+:  :+:+: :+:+:  :+:    :+:
+   +:+        +:+        +:+ +:+:+ +:+ +:+    +:+ 
+  :#:        :#:        +#+  +:+  +#+ +#++:++#+   
+ +#+   +#+# +#+   +#+# +#+       +#+ +#+          
+#+#    #+# #+#    #+# #+#       #+# #+#           
+########   ########  ###       ### ###            ` + "\n\n"
 
-	fmt.Println("Welcome to GGMP CLI")
+const gogetmypassword string = "\t\tgo-get-my-password\n\n"
+
+func main() {
 
 	db := database.NewDatabase("ggmp.db")
 	defer db.Close()
 
 	a := action.NewAction(db)
+
+	fmt.Print(ggmp)
+	fmt.Print(gogetmypassword)
 
 	model := teamodels.NewAuthMenuModel(a)
 	programme := tea.NewProgram(model)
