@@ -138,17 +138,17 @@ func (a *Action) Register(username, password string) string {
 	return ""
 }
 
-func (a *Action) Delete(username, password string) (bool, error) {
+func (a *Action) Delete(username, password string) error {
 	if err := a.Login(username, password); err != nil {
-		return false, err
+		return err
 	}
 
 	err := a.db.DeleteMasterAccount(username)
 	if err != nil {
-		return false, err
+		return err
 	}
 
-	return true, nil
+	return nil
 }
 
 func (a *Action) ListAccounts() ([]string, error) {

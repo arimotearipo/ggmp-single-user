@@ -13,7 +13,7 @@ type DeletingAccountModel struct {
 	menuItems []string
 	user      string
 	password  textinput.Model
-	err       string
+	result    string
 }
 
 func NewDeletingAccountModel(a *action.Action, u string) *DeletingAccountModel {
@@ -28,7 +28,7 @@ func NewDeletingAccountModel(a *action.Action, u string) *DeletingAccountModel {
 		menuIdx:   0,
 		menuItems: []string{"Password", "SUBMIT", "BACK"},
 		password:  passwordInput,
-		err:       "",
+		result:    "",
 	}
 }
 
@@ -56,9 +56,12 @@ func (m *DeletingAccountModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "BACK":
 				return NewAccountDeleteModel(m.action), nil
 			case "SUBMIT":
-				if ok, _ := m.action.Delete(m.user, m.password.Value()); ok {
-					return NewAuthMenuModel(m.action), nil
+				err := m.action.Delete(m.user, m.password.Value())
+				if err != nil {
+					m.result = err.Error()
+					return m, nil
 				}
+				return NewAuthMenuModel(m.action), nil
 			}
 		}
 	}
@@ -84,7 +87,7 @@ func (m *DeletingAccountModel) View() string {
 			s += item + "\n"
 		}
 	}
-	s += m.err
+	s += m.result
 	return s
 }
 
