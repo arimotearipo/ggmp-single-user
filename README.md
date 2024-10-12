@@ -32,7 +32,7 @@ This project requires the following dependencies:
 
 - Go 1.23.1 or later
 - github.com/mattn/go-sqlite3
-- golang.org/x/crypto/pbkdf2
+- golang.org/x/crypto/argon2
 - golang.org/x/crypto/bcrypt
 - github.com/charmbracelet/bubbletea
 - github.com/charmbracelet/bubbles
@@ -42,7 +42,7 @@ To install these dependencies, run:
 
 ```bash
 go get github.com/mattn/go-sqlite3
-go get golang.org/x/crypto/pbkdf2
+go get golang.org/x/crypto/argon2
 go get golang.org/x/crypto/bcrypt
 go get github.com/charmbracelet/bubbletea
 go get github.com/charmbracelet/bubbles
