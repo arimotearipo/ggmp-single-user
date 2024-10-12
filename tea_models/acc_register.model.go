@@ -36,11 +36,11 @@ func NewAccountRegisterModel(c *action.Action) *AccountRegisterModel {
 	usernameInput.Focus()
 
 	passwordInput := textinput.New()
-	passwordInput.Placeholder = "Enter password"
+	passwordInput.Placeholder = "Enter master password"
 	passwordInput.EchoMode = textinput.EchoPassword
 
 	confirmPasswordInput := textinput.New()
-	confirmPasswordInput.Placeholder = "Confirm password"
+	confirmPasswordInput.Placeholder = "Confirm master password"
 	confirmPasswordInput.EchoMode = textinput.EchoPassword
 
 	m := &AccountRegisterModel{
@@ -124,7 +124,7 @@ func (m *AccountRegisterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *AccountRegisterModel) View() string {
-	s := "Register for account\n"
+	s := "Register for account\nNOTE: Master password must be remembered and cannot be recovered!\n"
 	for i, item := range m.menuItems {
 		if i == m.menuIdx {
 			s += "👉 "

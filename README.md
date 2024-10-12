@@ -59,6 +59,38 @@ go get modernc.org/sqlite
 - Users are prompted to enter a master password to access the password manager.
 - The master password is used to derive an encryption key using Argon2, ensuring that the key is unique and secure.
 
+## Demo
+
+Here's a step-by-step demo of how to use Go-Get-My-Password:
+
+### Creating Master Account
+
+![Create master account](demo_images/ggmp_master_register.png)
+
+### Login Screen
+
+![Login Screen](demo_images/ggmp_master_login.png)
+
+### Post Login Screen
+
+![Passwords menu screen (post login)](demo_images/ggmp_pw_menu.png)
+
+### Main Menu
+
+![Main Menu](demo_images/ggmp_main_menu.png)
+
+### Adding a New Password
+
+![Adding a New Password](demo_images/ggmp_save_login.png)
+
+### Listing saved logins
+
+![Listing saved logins](demo_images/ggmp_list_login.png)
+
+### Viewing Passwords
+
+![Viewing Passwords](demo_images/ggmp_get_password.png)
+
 ## Contributing
 
 ---

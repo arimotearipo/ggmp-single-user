@@ -21,7 +21,7 @@ func NewAccountLoginModel(a *action.Action) *AccountLoginModel {
 	usernameInput.Focus()
 
 	passwordInput := textinput.New()
-	passwordInput.Placeholder = "Enter password"
+	passwordInput.Placeholder = "Enter master password"
 	passwordInput.EchoMode = textinput.EchoPassword
 
 	return &AccountLoginModel{
