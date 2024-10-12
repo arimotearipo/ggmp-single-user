@@ -3,8 +3,8 @@ package action
 import (
 	"crypto/rand"
 
-	"github.com/arimotearipo/ggmp/database"
-	"github.com/arimotearipo/ggmp/encryption"
+	"github.com/arimotearipo/ggmp/internal/database"
+	"github.com/arimotearipo/ggmp/internal/encryption"
 
 	"golang.org/x/crypto/bcrypt"
 )

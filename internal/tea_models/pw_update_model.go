@@ -1,7 +1,7 @@
 package teamodels
 
 import (
-	"github.com/arimotearipo/ggmp/action"
+	"github.com/arimotearipo/ggmp/internal/action"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )

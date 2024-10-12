@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 
-	"github.com/arimotearipo/ggmp/action"
-	"github.com/arimotearipo/ggmp/database"
-	teamodels "github.com/arimotearipo/ggmp/tea_models"
+	"github.com/arimotearipo/ggmp/internal/action"
+	"github.com/arimotearipo/ggmp/internal/database"
+	teamodels "github.com/arimotearipo/ggmp/internal/tea_models"
 	tea "github.com/charmbracelet/bubbletea"
 )
 

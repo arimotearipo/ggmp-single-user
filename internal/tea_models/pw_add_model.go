@@ -1,49 +1,55 @@
 package teamodels
 
 import (
-	"github.com/arimotearipo/ggmp/action"
+	"github.com/arimotearipo/ggmp/internal/action"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type AccountLoginModel struct {
+type PasswordAddModel struct {
 	action    *action.Action
-	menuIdx   int
 	menuItems []string
+	menuIdx   int
+	uri       textinput.Model
 	username  textinput.Model
 	password  textinput.Model
 	result    string
 }
 
-func NewAccountLoginModel(a *action.Action) *AccountLoginModel {
+func NewPasswordAddModel(a *action.Action) *PasswordAddModel {
+	uriInput := textinput.New()
+	uriInput.Placeholder = "Enter URI"
+	uriInput.Focus()
+
 	usernameInput := textinput.New()
 	usernameInput.Placeholder = "Enter username"
-	usernameInput.Focus()
 
 	passwordInput := textinput.New()
-	passwordInput.Placeholder = "Enter master password"
+	passwordInput.Placeholder = "Enter password"
 	passwordInput.EchoMode = textinput.EchoPassword
 
-	return &AccountLoginModel{
+	return &PasswordAddModel{
 		action:    a,
-		menuItems: []string{"Username", "Password", "SUBMIT", "BACK"},
+		menuItems: []string{"URI", "Username", "Password", "SUBMIT", "BACK"},
 		menuIdx:   0,
+		uri:       uriInput,
 		username:  usernameInput,
 		password:  passwordInput,
 		result:    "",
 	}
 }
 
-func (m *AccountLoginModel) blurAllInputs() {
+func (m *PasswordAddModel) blurAllInputs() {
 	m.username.Blur()
 	m.password.Blur()
+	m.uri.Blur()
 }
 
-func (m *AccountLoginModel) Init() tea.Cmd {
+func (m *PasswordAddModel) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m *AccountLoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *PasswordAddModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
@@ -60,51 +66,61 @@ func (m *AccountLoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			m.blurAllInputs()
 			if m.menuIdx == 0 {
-				m.username.Focus()
+				m.uri.Focus()
 			} else if m.menuIdx == 1 {
+				m.username.Focus()
+			} else if m.menuIdx == 2 {
 				m.password.Focus()
 			}
 		case "enter":
 			selected := m.menuItems[m.menuIdx]
 			switch selected {
 			case "BACK":
-				return NewAuthMenuModel(m.action), nil
-			case "SUBMIT":
-				if err := m.action.Login(m.username.Value(), m.password.Value()); err != nil {
-					m.result = err.Error()
-					return m, nil
-				}
 				return NewPasswordMenuModel(m.action), nil
+			case "SUBMIT":
+				if err := m.action.AddPassword(m.uri.Value(), m.username.Value(), m.password.Value()); err != nil {
+					m.result = err.Error()
+				} else {
+					return NewPasswordMenuModel(m.action), nil
+				}
 			}
-
 		}
 	}
-
-	if m.menuIdx == 0 {
+	selected := m.menuItems[m.menuIdx]
+	switch selected {
+	case "URI":
+		m.uri, cmd = m.uri.Update(msg)
+	case "Username":
 		m.username, cmd = m.username.Update(msg)
-	} else if m.menuIdx == 1 {
+	case "Password":
 		m.password, cmd = m.password.Update(msg)
 	}
 
 	return m, cmd
 }
 
-func (m *AccountLoginModel) View() string {
-	s := "Enter your credentials\n"
+func (m *PasswordAddModel) View() string {
+	s := "Add new login details to save\n"
 	for i, item := range m.menuItems {
 		if i == m.menuIdx {
 			s += "👉 "
 		} else {
 			s += "   "
 		}
-		if item == "Username" {
+
+		switch item {
+		case "URI":
+			s += m.uri.View() + "\n"
+		case "Username":
 			s += m.username.View() + "\n"
-		} else if item == "Password" {
+		case "Password":
 			s += m.password.View() + "\n"
-		} else {
+		default:
 			s += item + "\n"
 		}
 	}
+
 	s += m.result
+
 	return s
 }

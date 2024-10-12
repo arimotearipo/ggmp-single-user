@@ -1,7 +1,7 @@
 # Variables
 BINARY_NAME=ggmp
 VERSION=1.0.0
-MAIN_PATH=./main.go
+MAIN_PATH=./cmd/ggmp/main.go
 
 # Build directories
 BUILD_DIR=./build

@@ -3,7 +3,7 @@ package teamodels
 import (
 	"fmt"
 
-	"github.com/arimotearipo/ggmp/action"
+	"github.com/arimotearipo/ggmp/internal/action"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
