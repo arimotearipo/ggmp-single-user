@@ -1,6 +1,8 @@
 package teamodels
 
 import (
+	"errors"
+
 	"github.com/arimotearipo/ggmp/internal/action"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -13,7 +15,7 @@ type AccountRegisterModel struct {
 	username        textinput.Model
 	password        textinput.Model
 	confirmPassword textinput.Model
-	err             string
+	result          string
 }
 
 func (m *AccountRegisterModel) blurAllInputs() {
@@ -22,12 +24,11 @@ func (m *AccountRegisterModel) blurAllInputs() {
 	m.confirmPassword.Blur()
 }
 
-func (m *AccountRegisterModel) validatePasswords() {
+func (m *AccountRegisterModel) validatePasswords() error {
 	if m.password.Value() != m.confirmPassword.Value() {
-		m.err = "Passwords does not match"
-	} else {
-		m.err = ""
+		return errors.New("passwords do not match")
 	}
+	return nil
 }
 
 func NewAccountRegisterModel(c *action.Action) *AccountRegisterModel {
@@ -50,7 +51,7 @@ func NewAccountRegisterModel(c *action.Action) *AccountRegisterModel {
 		username:        usernameInput,
 		password:        passwordInput,
 		confirmPassword: confirmPasswordInput,
-		err:             "",
+		result:          "",
 	}
 
 	passwordInput.Validate = func(s string) error {
@@ -96,16 +97,18 @@ func (m *AccountRegisterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "BACK":
 				return NewAuthMenuModel(m.action), nil
 			case "SUBMIT":
-				if m.password.Value() != m.confirmPassword.Value() {
+				if err := m.validatePasswords(); err != nil {
+					m.result = err.Error()
 					return m, nil
-				}
-				errMsg := m.action.Register(m.username.Value(), m.password.Value())
-				if errMsg == "" {
-					return NewAuthMenuModel(m.action), nil
 				} else {
-					m.err = errMsg
+					m.result = ""
+				}
+
+				if err := m.action.Register(m.username.Value(), m.password.Value()); err != nil {
+					m.result = err.Error()
 					return m, nil
 				}
+				return NewAuthMenuModel(m.action), nil
 			}
 		}
 	}
@@ -144,8 +147,7 @@ func (m *AccountRegisterModel) View() string {
 		}
 	}
 
-	if m.err != "" {
-		s += m.err + "\n"
-	}
+	s += m.result
+
 	return s
 }

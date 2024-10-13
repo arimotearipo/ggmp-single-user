@@ -12,7 +12,7 @@ type AccountsListModel struct {
 }
 
 func NewAccountsListModel(a *action.Action) *AccountsListModel {
-	accounts, _ := a.ListAccounts()
+	accounts, _ := a.ListMasterAccounts()
 
 	return &AccountsListModel{
 		cmd:       a,

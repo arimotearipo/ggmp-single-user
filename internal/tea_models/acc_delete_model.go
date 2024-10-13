@@ -18,7 +18,7 @@ type DeletingAccountModel struct {
 
 func NewDeletingAccountModel(a *action.Action, u string) *DeletingAccountModel {
 	passwordInput := textinput.New()
-	passwordInput.Placeholder = "Enter password"
+	passwordInput.Placeholder = "Enter master passwird"
 	passwordInput.EchoMode = textinput.EchoPassword
 	passwordInput.Focus()
 
@@ -56,7 +56,7 @@ func (m *DeletingAccountModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "BACK":
 				return NewAccountDeleteModel(m.action), nil
 			case "SUBMIT":
-				err := m.action.Delete(m.user, m.password.Value())
+				err := m.action.DeleteMasterAccount(m.user, m.password.Value())
 				if err != nil {
 					m.result = err.Error()
 					return m, nil
@@ -73,7 +73,7 @@ func (m *DeletingAccountModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *DeletingAccountModel) View() string {
-	s := ""
+	s := "Enter your master password\n"
 	for idx, item := range m.menuItems {
 		if idx == m.menuIdx {
 			s += "👉 "
@@ -100,7 +100,7 @@ type AccountDeleteModel struct {
 }
 
 func NewAccountDeleteModel(a *action.Action) *AccountDeleteModel {
-	accounts, _ := a.ListAccounts()
+	accounts, _ := a.ListMasterAccounts()
 
 	return &AccountDeleteModel{
 		cmd:       a,

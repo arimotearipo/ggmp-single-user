@@ -12,11 +12,11 @@ type PasswordMenuModel struct {
 	selected  string
 }
 
-func NewPasswordMenuModel(c *action.Action) *PasswordMenuModel {
+func NewPasswordMenuModel(a *action.Action) *PasswordMenuModel {
 	return &PasswordMenuModel{
-		action:    c,
+		action:    a,
 		menuIdx:   0,
-		menuItems: []string{"Get password", "Add password", "Update password", "Delete password", "LOGOUT"},
+		menuItems: []string{"Get password", "Add password", "Update password", "Delete password", "Change master password", "LOGOUT"},
 	}
 }
 
@@ -53,6 +53,8 @@ func (m *PasswordMenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "LOGOUT":
 				m.action.Logout()
 				return NewAuthMenuModel(m.action), nil
+			case "Change master password":
+				return NewAccountChangeMasterPasswordModel(m.action), nil
 			default:
 				return m.handleSelection(), nil
 			}

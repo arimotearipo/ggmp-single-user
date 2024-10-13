@@ -119,26 +119,26 @@ func (a *Action) Logout() {
 	a.sess = nil
 }
 
-func (a *Action) Register(username, password string) string {
+func (a *Action) Register(username, password string) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 12)
 	if err != nil {
-		return err.Error()
+		return err
 	}
 
 	salt := make([]byte, 16)
 	if _, err := rand.Read(salt); err != nil {
-		return err.Error()
+		return err
 	}
 
 	err = a.db.AddMasterAccount(username, string(hashedPassword), salt)
 	if err != nil {
-		return err.Error()
+		return err
 	}
 
-	return ""
+	return nil
 }
 
-func (a *Action) Delete(username, password string) error {
+func (a *Action) DeleteMasterAccount(username, password string) error {
 	if err := a.Login(username, password); err != nil {
 		return err
 	}
@@ -151,11 +151,16 @@ func (a *Action) Delete(username, password string) error {
 	return nil
 }
 
-func (a *Action) ListAccounts() ([]string, error) {
+func (a *Action) ListMasterAccounts() ([]string, error) {
 	accounts, err := a.db.ListMasterAccounts()
 	if err != nil {
 		return nil, err
 	}
 
 	return accounts, nil
+}
+
+func (a *Action) UpdateMasterPassword(masterPassword string) error {
+	// TODO: update master password and update subsequent passwords related to the master account
+	return nil
 }
