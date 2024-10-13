@@ -5,11 +5,9 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type URI = string
-
 type PasswordsListModel struct {
 	action    *action.Action
-	uris      []URI
+	uris      []string
 	selected  int
 	operation string
 	result    string
@@ -17,9 +15,16 @@ type PasswordsListModel struct {
 
 func NewPasswordsListModel(a *action.Action, o string) *PasswordsListModel {
 	uris, _ := a.ListURIs()
+
+	var urisOnly []string
+
+	for _, uri := range uris {
+		urisOnly = append(urisOnly, uri.Uri)
+	}
+
 	return &PasswordsListModel{
 		action:    a,
-		uris:      append(uris, "BACK"),
+		uris:      append(urisOnly, "BACK"),
 		selected:  0,
 		operation: o,
 		result:    "",

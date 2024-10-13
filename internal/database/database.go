@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 
+	"github.com/arimotearipo/ggmp/internal/types"
 	_ "modernc.org/sqlite"
 )
 
@@ -69,7 +70,7 @@ func (db *Database) AddPassword(id int, uri, username, encryption string) error 
 	return nil
 }
 
-func (db *Database) GetPassword(uri string, id int) (string, string, error) {
+func (db *Database) GetPassword(uri string, ownerId int) (username string, encryptedPassword string, err error) {
 	selectAccountQuery := `SELECT username, encryption FROM accounts WHERE uri = ? AND owner = ?;`
 	statement, err := db.DB.Prepare(selectAccountQuery)
 
@@ -77,9 +78,7 @@ func (db *Database) GetPassword(uri string, id int) (string, string, error) {
 		return "", "", err
 	}
 
-	var username string
-	var encryptedPassword string
-	err = statement.QueryRow(uri, id).Scan(&username, &encryptedPassword)
+	err = statement.QueryRow(uri, ownerId).Scan(&username, &encryptedPassword)
 	if err != nil {
 		return "", "", err
 	}
@@ -87,8 +86,8 @@ func (db *Database) GetPassword(uri string, id int) (string, string, error) {
 	return username, encryptedPassword, nil
 }
 
-func (db *Database) ListURIs(id int) ([]string, error) {
-	selectAccountQuery := `SELECT uri FROM accounts WHERE owner = ?;`
+func (db *Database) ListURIs(id int) ([]types.URI, error) {
+	selectAccountQuery := `SELECT id, uri FROM accounts WHERE owner = ?;`
 	statement, err := db.DB.Prepare(selectAccountQuery)
 
 	if err != nil {
@@ -101,10 +100,10 @@ func (db *Database) ListURIs(id int) ([]string, error) {
 		return nil, err
 	}
 
-	var uris []string
+	var uris []types.URI
 	for rows.Next() {
-		var uri string
-		rows.Scan(&uri)
+		var uri types.URI
+		rows.Scan(&uri.Id, &uri.Uri)
 		uris = append(uris, uri)
 	}
 	return uris, nil
@@ -238,4 +237,20 @@ func (db *Database) GetUserId(username string) (int, error) {
 	}
 
 	return id, nil
+}
+
+func (db *Database) ChangeMasterPassword(userId int, hashedPassword string, salt []byte) error {
+	updateMasterPasswordQuery := `UPDATE master_account SET hashed_password = ?, salt = ? WHERE id = ?;`
+
+	stmt, err := db.DB.Prepare(updateMasterPasswordQuery)
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.Exec(hashedPassword, salt, userId)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

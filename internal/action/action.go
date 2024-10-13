@@ -5,6 +5,7 @@ import (
 
 	"github.com/arimotearipo/ggmp/internal/database"
 	"github.com/arimotearipo/ggmp/internal/encryption"
+	"github.com/arimotearipo/ggmp/internal/types"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -39,13 +40,13 @@ func (a *Action) AddPassword(uri, username, password string) error {
 	return nil
 }
 
-func (a *Action) GetPassword(uri string) (string, string, error) {
+func (a *Action) GetPassword(uri string) (username string, password string, err error) {
 	username, encryptedPassword, err := a.db.GetPassword(uri, a.sess.id)
 	if err != nil {
 		return "", "", err
 	}
 
-	password, err := encryption.Decrypt(encryptedPassword, a.sess.masterKey)
+	password, err = encryption.Decrypt(encryptedPassword, a.sess.masterKey)
 	if err != nil {
 		return "", "", err
 	}
@@ -53,7 +54,7 @@ func (a *Action) GetPassword(uri string) (string, string, error) {
 	return username, password, nil
 }
 
-func (a *Action) ListURIs() ([]string, error) {
+func (a *Action) ListURIs() ([]types.URI, error) {
 	uris, err := a.db.ListURIs(a.sess.id)
 	if err != nil {
 		return nil, err
@@ -72,12 +73,12 @@ func (a *Action) DeletePassword(uri string) error {
 }
 
 func (a *Action) UpdatePassword(uri, username, password string) error {
-	hashed_password, err := encryption.Encrypt(password, a.sess.masterKey)
+	encryptedPassword, err := encryption.Encrypt(password, a.sess.masterKey)
 	if err != nil {
 		return err
 	}
 
-	err = a.db.UpdatePassword(uri, username, hashed_password)
+	err = a.db.UpdatePassword(uri, username, encryptedPassword)
 	if err != nil {
 		return err
 	}
@@ -160,7 +161,52 @@ func (a *Action) ListMasterAccounts() ([]string, error) {
 	return accounts, nil
 }
 
-func (a *Action) UpdateMasterPassword(masterPassword string) error {
-	// TODO: update master password and update subsequent passwords related to the master account
+func (a *Action) UpdateMasterPassword(newMasterPassword string) error {
+	salt := make([]byte, 16)
+	if _, err := rand.Read(salt); err != nil {
+		return err
+	}
+
+	newMasterKey := encryption.DeriveKey([]byte(newMasterPassword), salt)
+
+	savedOldMasterKey := make([]byte, len(a.sess.masterKey))
+	copy(savedOldMasterKey, a.sess.masterKey)
+
+	// get all the uris associated to the logged in master account
+	uris, err := a.db.ListURIs(a.sess.id)
+	if err != nil {
+		return err
+	}
+
+	for _, uri := range uris {
+		// get the decrypted password and username
+		username, decryptedPassword, err := a.GetPassword(uri.Uri)
+		if err != nil {
+			return err
+		}
+
+		// temporarily assign to the new master key
+		a.sess.masterKey = newMasterKey
+
+		// call update. UpdatePassword() will re-encrypt the password with new master key
+		err = a.UpdatePassword(uri.Uri, username, decryptedPassword)
+		if err != nil {
+			// if something goes wrong, use back old master key
+			a.sess.masterKey = savedOldMasterKey
+			return err
+		}
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newMasterPassword), 12)
+	if err != nil {
+		// TODO: handle reversing entire action
+		return err
+	}
+
+	err = a.db.ChangeMasterPassword(a.sess.id, string(hashedPassword), salt)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
