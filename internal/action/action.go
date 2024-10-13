@@ -167,10 +167,18 @@ func (a *Action) UpdateMasterPassword(newMasterPassword string) error {
 		return err
 	}
 
+	// derive new master key and saved old master in case we need to rollback transaction
 	newMasterKey := encryption.DeriveKey([]byte(newMasterPassword), salt)
-
 	savedOldMasterKey := make([]byte, len(a.sess.masterKey))
 	copy(savedOldMasterKey, a.sess.masterKey)
+
+	err := a.db.BeginTx()
+	if err != nil {
+		return err
+	}
+	defer a.db.RollbackTx(func() {
+		a.sess.masterKey = savedOldMasterKey
+	})
 
 	// get all the uris associated to the logged in master account
 	uris, err := a.db.ListURIs(a.sess.id)
@@ -204,6 +212,11 @@ func (a *Action) UpdateMasterPassword(newMasterPassword string) error {
 	}
 
 	err = a.db.ChangeMasterPassword(a.sess.id, string(hashedPassword), salt)
+	if err != nil {
+		return err
+	}
+
+	err = a.db.CommitTx()
 	if err != nil {
 		return err
 	}

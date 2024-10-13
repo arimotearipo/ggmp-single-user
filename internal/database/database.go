@@ -11,6 +11,22 @@ import (
 
 type Database struct {
 	DB *sql.DB
+	TX *sql.Tx
+}
+
+type SQLExecutor interface {
+	Exec(query string, args ...interface{}) (sql.Result, error)
+	Query(query string, args ...interface{}) (*sql.Rows, error)
+	QueryRow(query string, args ...interface{}) *sql.Row
+	Prepare(query string) (*sql.Stmt, error)
+}
+
+func (db *Database) executor() SQLExecutor {
+	if db.TX != nil {
+		return db.TX
+	}
+
+	return db.DB
 }
 
 func NewDatabase(name string) *Database {
@@ -52,7 +68,7 @@ func NewDatabase(name string) *Database {
 	statement.Exec()
 	log.Println("Account table created")
 
-	return &Database{DB}
+	return &Database{DB: DB, TX: nil}
 }
 
 func (db *Database) Close() {
@@ -61,7 +77,7 @@ func (db *Database) Close() {
 
 func (db *Database) AddPassword(id int, uri, username, encryption string) error {
 	insertAccountQuery := `INSERT INTO accounts (owner, uri, username, encryption) VALUES (?, ?, ?, ?);`
-	statement, err := db.DB.Prepare(insertAccountQuery)
+	statement, err := db.executor().Prepare(insertAccountQuery)
 	if err != nil {
 		return err
 	}
@@ -72,7 +88,7 @@ func (db *Database) AddPassword(id int, uri, username, encryption string) error 
 
 func (db *Database) GetPassword(uri string, ownerId int) (username string, encryptedPassword string, err error) {
 	selectAccountQuery := `SELECT username, encryption FROM accounts WHERE uri = ? AND owner = ?;`
-	statement, err := db.DB.Prepare(selectAccountQuery)
+	statement, err := db.executor().Prepare(selectAccountQuery)
 
 	if err != nil {
 		return "", "", err
@@ -88,7 +104,7 @@ func (db *Database) GetPassword(uri string, ownerId int) (username string, encry
 
 func (db *Database) ListURIs(id int) ([]types.URI, error) {
 	selectAccountQuery := `SELECT id, uri FROM accounts WHERE owner = ?;`
-	statement, err := db.DB.Prepare(selectAccountQuery)
+	statement, err := db.executor().Prepare(selectAccountQuery)
 
 	if err != nil {
 		return nil, err
@@ -111,7 +127,7 @@ func (db *Database) ListURIs(id int) ([]types.URI, error) {
 
 func (db *Database) DeleteAccount(uri string, id int) error {
 	deleteAccountQuery := `DELETE FROM accounts WHERE uri = ? AND owner = ?;`
-	statement, err := db.DB.Prepare(deleteAccountQuery)
+	statement, err := db.executor().Prepare(deleteAccountQuery)
 
 	if err != nil {
 		return err
@@ -127,7 +143,7 @@ func (db *Database) DeleteAccount(uri string, id int) error {
 
 func (db *Database) UpdatePassword(uri string, username string, encryption string) error {
 	updateAccountQuery := `UPDATE accounts SET username = ?, encryption = ? WHERE uri = ?;`
-	statement, err := db.DB.Prepare(updateAccountQuery)
+	statement, err := db.executor().Prepare(updateAccountQuery)
 
 	if err != nil {
 		return err
@@ -139,7 +155,7 @@ func (db *Database) UpdatePassword(uri string, username string, encryption strin
 
 func (db *Database) AddMasterAccount(username string, hashedPassword string, salt []byte) error {
 	insertMasterAccountQuery := `INSERT INTO master_account (username, hashed_password, salt) VALUES (?, ?, ?);`
-	statement, err := db.DB.Prepare(insertMasterAccountQuery)
+	statement, err := db.executor().Prepare(insertMasterAccountQuery)
 	if err != nil {
 		return err
 	}
@@ -154,7 +170,7 @@ func (db *Database) AddMasterAccount(username string, hashedPassword string, sal
 
 func (db *Database) GetMasterAccount(username string) (string, []byte, error) {
 	selectMasterAccountQuery := `SELECT COUNT(*) FROM master_account WHERE username = ?;`
-	statement, err := db.DB.Prepare(selectMasterAccountQuery)
+	statement, err := db.executor().Prepare(selectMasterAccountQuery)
 	if err != nil {
 		return "", nil, err
 	}
@@ -166,7 +182,7 @@ func (db *Database) GetMasterAccount(username string) (string, []byte, error) {
 	}
 
 	selectMasterAccountQuery = `SELECT hashed_password, salt FROM master_account WHERE username = ?;`
-	statement, err = db.DB.Prepare(selectMasterAccountQuery)
+	statement, err = db.executor().Prepare(selectMasterAccountQuery)
 	if err != nil {
 		return "", nil, err
 	}
@@ -179,7 +195,7 @@ func (db *Database) GetMasterAccount(username string) (string, []byte, error) {
 
 func (db *Database) DeleteMasterAccount(username string) error {
 	deleteLoginsQuery := `DELETE FROM accounts WHERE owner = (SELECT id FROM master_account WHERE username = ?);`
-	statement, err := db.DB.Prepare(deleteLoginsQuery)
+	statement, err := db.executor().Prepare(deleteLoginsQuery)
 	if err != nil {
 		return err
 	}
@@ -189,7 +205,7 @@ func (db *Database) DeleteMasterAccount(username string) error {
 	}
 
 	deleteMasterAccountQuery := `DELETE FROM master_account WHERE username = ?;`
-	statement, err = db.DB.Prepare(deleteMasterAccountQuery)
+	statement, err = db.executor().Prepare(deleteMasterAccountQuery)
 	if err != nil {
 		return err
 	}
@@ -203,7 +219,7 @@ func (db *Database) DeleteMasterAccount(username string) error {
 
 func (db *Database) ListMasterAccounts() ([]string, error) {
 	selectMasterAccountQuery := `SELECT username FROM master_account;`
-	statement, err := db.DB.Prepare(selectMasterAccountQuery)
+	statement, err := db.executor().Prepare(selectMasterAccountQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +241,7 @@ func (db *Database) ListMasterAccounts() ([]string, error) {
 func (db *Database) GetUserId(username string) (int, error) {
 	query := "SELECT id FROM master_account WHERE username = ?;"
 
-	statement, err := db.DB.Prepare(query)
+	statement, err := db.executor().Prepare(query)
 	if err != nil {
 		return 0, err
 	}
@@ -242,7 +258,7 @@ func (db *Database) GetUserId(username string) (int, error) {
 func (db *Database) ChangeMasterPassword(userId int, hashedPassword string, salt []byte) error {
 	updateMasterPasswordQuery := `UPDATE master_account SET hashed_password = ?, salt = ? WHERE id = ?;`
 
-	stmt, err := db.DB.Prepare(updateMasterPasswordQuery)
+	stmt, err := db.executor().Prepare(updateMasterPasswordQuery)
 	if err != nil {
 		return err
 	}
