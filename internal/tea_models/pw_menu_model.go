@@ -10,6 +10,7 @@ type PasswordMenuModel struct {
 	menuIdx   int
 	menuItems []string
 	selected  string
+	result    string
 }
 
 func NewPasswordMenuModel(a *action.Action) *PasswordMenuModel {
@@ -17,6 +18,7 @@ func NewPasswordMenuModel(a *action.Action) *PasswordMenuModel {
 		action:    a,
 		menuIdx:   0,
 		menuItems: []string{"Get password", "Add password", "Update password", "Delete password", "Change master password", "LOGOUT"},
+		result:    "",
 	}
 }
 
@@ -72,5 +74,8 @@ func (m *PasswordMenuModel) View() string {
 			s += "   " + item + "\n"
 		}
 	}
+
+	s += m.result
+
 	return s
 }

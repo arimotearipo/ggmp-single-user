@@ -86,15 +86,15 @@ func (db *Database) AddPassword(id int, uri, username, encryption string) error 
 	return nil
 }
 
-func (db *Database) GetPassword(uri string, ownerId int) (username string, encryptedPassword string, err error) {
-	selectAccountQuery := `SELECT username, encryption FROM accounts WHERE uri = ? AND owner = ?;`
+func (db *Database) GetPassword(uriId int, ownerId int) (username string, encryptedPassword string, err error) {
+	selectAccountQuery := `SELECT username, encryption FROM accounts WHERE id = ? AND owner = ?;`
 	statement, err := db.executor().Prepare(selectAccountQuery)
 
 	if err != nil {
 		return "", "", err
 	}
 
-	err = statement.QueryRow(uri, ownerId).Scan(&username, &encryptedPassword)
+	err = statement.QueryRow(uriId, ownerId).Scan(&username, &encryptedPassword)
 	if err != nil {
 		return "", "", err
 	}
@@ -125,15 +125,15 @@ func (db *Database) ListURIs(id int) ([]types.URI, error) {
 	return uris, nil
 }
 
-func (db *Database) DeleteAccount(uri string, id int) error {
-	deleteAccountQuery := `DELETE FROM accounts WHERE uri = ? AND owner = ?;`
+func (db *Database) DeleteAccount(uriId int, id int) error {
+	deleteAccountQuery := `DELETE FROM accounts WHERE id = ? AND owner = ?;`
 	statement, err := db.executor().Prepare(deleteAccountQuery)
 
 	if err != nil {
 		return err
 	}
 
-	_, err = statement.Exec(uri, id)
+	_, err = statement.Exec(uriId, id)
 	if err != nil {
 		return err
 	}
@@ -141,15 +141,15 @@ func (db *Database) DeleteAccount(uri string, id int) error {
 	return nil
 }
 
-func (db *Database) UpdatePassword(uri string, username string, encryption string) error {
-	updateAccountQuery := `UPDATE accounts SET username = ?, encryption = ? WHERE uri = ?;`
+func (db *Database) UpdatePassword(uriId int, username string, encryption string) error {
+	updateAccountQuery := `UPDATE accounts SET username = ?, encryption = ? WHERE id = ?;`
 	statement, err := db.executor().Prepare(updateAccountQuery)
 
 	if err != nil {
 		return err
 	}
 
-	statement.Exec(username, encryption, uri)
+	statement.Exec(username, encryption, uriId)
 	return nil
 }
 
@@ -168,29 +168,27 @@ func (db *Database) AddMasterAccount(username string, hashedPassword string, sal
 	return nil
 }
 
-func (db *Database) GetMasterAccount(username string) (string, []byte, error) {
+func (db *Database) GetMasterAccount(username string) (id int, hashedPassword string, salt []byte, err error) {
 	selectMasterAccountQuery := `SELECT COUNT(*) FROM master_account WHERE username = ?;`
 	statement, err := db.executor().Prepare(selectMasterAccountQuery)
 	if err != nil {
-		return "", nil, err
+		return -1, "", nil, err
 	}
 
 	var count int
 	statement.QueryRow(username).Scan(&count)
 	if count == 0 {
-		return "", nil, errors.New("username does not exist")
+		return -1, "", nil, errors.New("username does not exist")
 	}
 
-	selectMasterAccountQuery = `SELECT hashed_password, salt FROM master_account WHERE username = ?;`
+	selectMasterAccountQuery = `SELECT id, hashed_password, salt FROM master_account WHERE username = ?;`
 	statement, err = db.executor().Prepare(selectMasterAccountQuery)
 	if err != nil {
-		return "", nil, err
+		return -1, "", nil, err
 	}
 
-	var hashedPassword string
-	var salt []byte
-	statement.QueryRow(username).Scan(&hashedPassword, salt)
-	return hashedPassword, salt, nil
+	statement.QueryRow(username).Scan(&id, &hashedPassword, &salt)
+	return id, hashedPassword, salt, nil
 }
 
 func (db *Database) DeleteMasterAccount(username string) error {

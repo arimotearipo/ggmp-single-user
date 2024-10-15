@@ -5,9 +5,21 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 
 	"golang.org/x/crypto/argon2"
 )
+
+const saltSize int = 16
+
+func GenerateSalt() ([]byte, error) {
+	salt := make([]byte, saltSize)
+	if _, err := rand.Read(salt); err != nil {
+		return nil, err
+	}
+
+	return salt, nil
+}
 
 func DeriveKey(password []byte, salt []byte) []byte {
 	time := uint32(1)
@@ -22,7 +34,7 @@ func Decrypt(encrypted string, masterKey []byte) (string, error) {
 	// Decode the encrypted string to bytes
 	decoded, err := base64.StdEncoding.DecodeString(encrypted)
 	if err != nil {
-		return "", err
+		return "", errors.New("fail to decode")
 	}
 
 	// Extract salt, IV and encryption bytes
@@ -36,31 +48,31 @@ func Decrypt(encrypted string, masterKey []byte) (string, error) {
 	// Create cipher block
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		return "", err
+		return "", errors.New("fail to create cipher block")
 	}
 
 	// Create GCM
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return "", err
+		return "", errors.New("fail to create gcm")
 	}
 
 	// Decrypt
 	plainText, err := gcm.Open(nil, initializationVector, encryptionBytes, nil)
 	if err != nil {
-		return "", err
+		return "", errors.New("fail to decrypt")
 	}
 
 	return string(plainText), nil
 }
 
 func Encrypt(password string, masterKey []byte) (ciphertText string, err error) {
-	salt := make([]byte, 16)
-	if _, err := rand.Read(salt); err != nil {
+	salt, err := GenerateSalt()
+	if err != nil {
 		return "", err
 	}
 
-	// Derive key from master password
+	// Derive key from master key
 	key := DeriveKey(masterKey, salt)
 
 	// Create cipher block
@@ -81,7 +93,7 @@ func Encrypt(password string, masterKey []byte) (ciphertText string, err error) 
 		return "", err
 	}
 
-	// Encrypt. The initializationVector will prepended to the ciphertext
+	// Encrypt. The initializationVector will be prepended to the ciphertext
 	ciphertext := gcm.Seal(initializationVector, initializationVector, []byte(password), nil)
 
 	// Combine salt and ciphertext, then encode

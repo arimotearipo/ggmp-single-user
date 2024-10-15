@@ -45,5 +45,7 @@ test:
 run: 
 	go run $(MAIN_PATH)
 
-cleardb:
-	rm ggmp.db
+reset:
+	rm -f ggmp.db
+
+rerun: reset run

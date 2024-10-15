@@ -2,12 +2,13 @@ package teamodels
 
 import (
 	"github.com/arimotearipo/ggmp/internal/action"
+	"github.com/arimotearipo/ggmp/internal/types"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 type PasswordsListModel struct {
 	action    *action.Action
-	uris      []string
+	uris      []types.URI
 	selected  int
 	operation string
 	result    string
@@ -16,15 +17,9 @@ type PasswordsListModel struct {
 func NewPasswordsListModel(a *action.Action, o string) *PasswordsListModel {
 	uris, _ := a.ListURIs()
 
-	var urisOnly []string
-
-	for _, uri := range uris {
-		urisOnly = append(urisOnly, uri.Uri)
-	}
-
 	return &PasswordsListModel{
 		action:    a,
-		uris:      append(urisOnly, "BACK"),
+		uris:      append(uris, types.URI{Id: 0, Uri: "BACK"}),
 		selected:  0,
 		operation: o,
 		result:    "",
@@ -68,7 +63,7 @@ func (m *PasswordsListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.selected = (m.selected + 1) % len(m.uris)
 			}
 		case "enter":
-			selected := m.uris[m.selected]
+			selected := m.uris[m.selected].Uri
 			switch selected {
 			case "BACK":
 				return NewPasswordMenuModel(m.action), nil
@@ -84,9 +79,9 @@ func (m *PasswordsListModel) View() string {
 	s := "Listing saved login details\n"
 	for i, uri := range m.uris {
 		if i == m.selected {
-			s += "👉 " + uri + "\n"
+			s += "👉 " + uri.Uri + "\n"
 		} else {
-			s += "   " + uri + "\n"
+			s += "   " + uri.Uri + "\n"
 		}
 	}
 	s += m.result

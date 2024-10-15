@@ -1,8 +1,6 @@
 package action
 
 import (
-	"crypto/rand"
-
 	"github.com/arimotearipo/ggmp/internal/database"
 	"github.com/arimotearipo/ggmp/internal/encryption"
 	"github.com/arimotearipo/ggmp/internal/types"
@@ -40,8 +38,8 @@ func (a *Action) AddPassword(uri, username, password string) error {
 	return nil
 }
 
-func (a *Action) GetPassword(uri string) (username string, password string, err error) {
-	username, encryptedPassword, err := a.db.GetPassword(uri, a.sess.id)
+func (a *Action) GetPassword(selectedUri types.URI) (username string, password string, err error) {
+	username, encryptedPassword, err := a.db.GetPassword(selectedUri.Id, a.sess.id)
 	if err != nil {
 		return "", "", err
 	}
@@ -63,8 +61,8 @@ func (a *Action) ListURIs() ([]types.URI, error) {
 	return uris, nil
 }
 
-func (a *Action) DeletePassword(uri string) error {
-	err := a.db.DeleteAccount(uri, a.sess.id)
+func (a *Action) DeletePassword(uriId int) error {
+	err := a.db.DeleteAccount(uriId, a.sess.id)
 	if err != nil {
 		return err
 	}
@@ -72,13 +70,13 @@ func (a *Action) DeletePassword(uri string) error {
 	return nil
 }
 
-func (a *Action) UpdatePassword(uri, username, password string) error {
+func (a *Action) UpdatePassword(uriId int, username, password string) error {
 	encryptedPassword, err := encryption.Encrypt(password, a.sess.masterKey)
 	if err != nil {
 		return err
 	}
 
-	err = a.db.UpdatePassword(uri, username, encryptedPassword)
+	err = a.db.UpdatePassword(uriId, username, encryptedPassword)
 	if err != nil {
 		return err
 	}
@@ -91,17 +89,12 @@ func (a *Action) UpdatePassword(uri, username, password string) error {
 // Will prompt the user for username and password and
 // proceeds to compare the hash and password
 func (a *Action) Login(username, password string) error {
-	hashedPassword, salt, err := a.db.GetMasterAccount(username)
+	id, hashedPassword, salt, err := a.db.GetMasterAccount(username)
 	if err != nil {
 		return err
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
-	if err != nil {
-		return err
-	}
-
-	id, err := a.db.GetUserId(username)
 	if err != nil {
 		return err
 	}
@@ -126,10 +119,7 @@ func (a *Action) Register(username, password string) error {
 		return err
 	}
 
-	salt := make([]byte, 16)
-	if _, err := rand.Read(salt); err != nil {
-		return err
-	}
+	salt, _ := encryption.GenerateSalt()
 
 	err = a.db.AddMasterAccount(username, string(hashedPassword), salt)
 	if err != nil {
@@ -162,10 +152,7 @@ func (a *Action) ListMasterAccounts() ([]string, error) {
 }
 
 func (a *Action) UpdateMasterPassword(newMasterPassword string) error {
-	salt := make([]byte, 16)
-	if _, err := rand.Read(salt); err != nil {
-		return err
-	}
+	salt, _ := encryption.GenerateSalt()
 
 	// derive new master key and saved old master in case we need to rollback transaction
 	newMasterKey := encryption.DeriveKey([]byte(newMasterPassword), salt)
@@ -188,26 +175,24 @@ func (a *Action) UpdateMasterPassword(newMasterPassword string) error {
 
 	for _, uri := range uris {
 		// get the decrypted password and username
-		username, decryptedPassword, err := a.GetPassword(uri.Uri)
+		// GetPassword() will perform decryption on saved passwords therefore need to use previous master key
+		a.sess.masterKey = savedOldMasterKey
+		username, decryptedPassword, err := a.GetPassword(uri)
 		if err != nil {
 			return err
 		}
 
-		// temporarily assign to the new master key
-		a.sess.masterKey = newMasterKey
-
 		// call update. UpdatePassword() will re-encrypt the password with new master key
-		err = a.UpdatePassword(uri.Uri, username, decryptedPassword)
+		// UpdatePassword() will perform encryption on new master key therefore need to use new master key
+		a.sess.masterKey = newMasterKey
+		err = a.UpdatePassword(uri.Id, username, decryptedPassword)
 		if err != nil {
-			// if something goes wrong, use back old master key
-			a.sess.masterKey = savedOldMasterKey
 			return err
 		}
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newMasterPassword), 12)
 	if err != nil {
-		// TODO: handle reversing entire action
 		return err
 	}
 
@@ -221,5 +206,6 @@ func (a *Action) UpdateMasterPassword(newMasterPassword string) error {
 		return err
 	}
 
+	a.sess.masterKey = newMasterKey
 	return nil
 }

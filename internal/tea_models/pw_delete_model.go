@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/arimotearipo/ggmp/internal/action"
+	"github.com/arimotearipo/ggmp/internal/types"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -11,17 +12,16 @@ type PasswordDeleteModel struct {
 	action    *action.Action
 	menuItems []string
 	menuIdx   int
-	uri       string
+	uri       types.URI
 	result    string
 }
 
-func NewPasswordDeleteModel(a *action.Action, uri string) *PasswordDeleteModel {
+func NewPasswordDeleteModel(a *action.Action, uri types.URI) *PasswordDeleteModel {
 	return &PasswordDeleteModel{
 		action:    a,
 		menuItems: []string{"Yes", "No"},
 		menuIdx:   1,
 		uri:       uri,
-		result:    "",
 	}
 }
 
@@ -47,7 +47,7 @@ func (m *PasswordDeleteModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "No":
 				return NewPasswordsListModel(m.action, "Delete password"), nil
 			case "Yes":
-				err := m.action.DeletePassword(m.uri)
+				err := m.action.DeletePassword(m.uri.Id)
 				if err == nil {
 					return NewPasswordsListModel(m.action, "Delete password"), nil
 				}

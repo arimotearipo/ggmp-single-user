@@ -2,6 +2,7 @@ package teamodels
 
 import (
 	"github.com/arimotearipo/ggmp/internal/action"
+	"github.com/arimotearipo/ggmp/internal/types"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -10,13 +11,13 @@ type PasswordUpdateModel struct {
 	action      *action.Action
 	menuItems   []string
 	menuIdx     int
-	selectedUri string
+	selectedUri types.URI
 	username    textinput.Model
 	password    textinput.Model
 	result      string
 }
 
-func NewPasswordUpdateModel(a *action.Action, selectedUri string) *PasswordUpdateModel {
+func NewPasswordUpdateModel(a *action.Action, selectedUri types.URI) *PasswordUpdateModel {
 	usernameInput := textinput.New()
 	usernameInput.Placeholder = "Enter username"
 	usernameInput.Focus()
@@ -72,7 +73,7 @@ func (m *PasswordUpdateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "BACK":
 				return NewPasswordsListModel(m.action, "Update password"), nil
 			case "UPDATE":
-				if err := m.action.UpdatePassword(m.selectedUri, m.username.Value(), m.password.Value()); err != nil {
+				if err := m.action.UpdatePassword(m.selectedUri.Id, m.username.Value(), m.password.Value()); err != nil {
 					m.result = err.Error()
 				} else {
 					return NewPasswordsListModel(m.action, "Update password"), nil
