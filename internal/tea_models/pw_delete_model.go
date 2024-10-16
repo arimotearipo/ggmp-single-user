@@ -60,7 +60,7 @@ func (m *PasswordDeleteModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *PasswordDeleteModel) View() string {
-	s := fmt.Sprintf("Are you sure you want to delete login for %s?\n", m.uri)
+	s := fmt.Sprintf("Are you sure you want to delete login for %s?\n", m.uri.Uri)
 	for i, item := range m.menuItems {
 		if i == m.menuIdx {
 			s += "👉 " + item + "\n"

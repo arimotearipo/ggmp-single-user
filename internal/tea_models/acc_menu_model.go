@@ -15,7 +15,7 @@ func NewAuthMenuModel(a *action.Action) *AuthMenuModel {
 	return &AuthMenuModel{
 		action:    a,
 		menuIdx:   0,
-		menuItems: []string{"Login", "Register", "List accounts", "Delete account", "EXIT"},
+		menuItems: []string{"Login", "Register", "List accounts", "Delete account", "Generate password", "EXIT"},
 	}
 }
 
@@ -45,6 +45,8 @@ func (m *AuthMenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return NewAccountsListModel(m.action), nil
 			case "Delete account":
 				return NewAccountDeleteModel(m.action), nil
+			case "Generate password":
+				return NewPasswordGeneratorModel(m.action), nil
 			case "EXIT":
 				return m, tea.Quit
 			}
