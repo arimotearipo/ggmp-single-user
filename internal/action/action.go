@@ -230,26 +230,41 @@ func (a *Action) GeneratePassword(c types.PasswordGeneratorConfig) (string, erro
 		return "", errors.New(e)
 	}
 
+	var characterPool strings.Builder
 	var result strings.Builder
 
 	// Generate minimum required characters
-	for i := 0; i < c.UppercaseLength; i++ {
-		result.WriteByte(uppercase[rand.Intn(len(uppercase))])
+	if c.UppercaseLength > 0 {
+		for i := 0; i < c.UppercaseLength; i++ {
+			result.WriteByte(uppercase[rand.Intn(len(uppercase))])
+		}
+		characterPool.WriteString(uppercase)
 	}
-	for i := 0; i < c.LowercaseLength; i++ {
-		result.WriteByte(lowercase[rand.Intn(len(lowercase))])
+
+	if c.LowercaseLength > 0 {
+		for i := 0; i < c.LowercaseLength; i++ {
+			result.WriteByte(lowercase[rand.Intn(len(lowercase))])
+		}
+		characterPool.WriteString(lowercase)
 	}
-	for i := 0; i < c.SpecialLength; i++ {
-		result.WriteByte(special[rand.Intn(len(special))])
+
+	if c.NumericLength > 0 {
+		for i := 0; i < c.SpecialLength; i++ {
+			result.WriteByte(special[rand.Intn(len(special))])
+		}
+		characterPool.WriteString(numbers)
 	}
-	for i := 0; i < c.NumericLength; i++ {
-		result.WriteByte(numbers[rand.Intn(len(numbers))])
+
+	if c.SpecialLength > 0 {
+		for i := 0; i < c.NumericLength; i++ {
+			result.WriteByte(numbers[rand.Intn(len(numbers))])
+		}
+		characterPool.WriteString(special)
 	}
 
 	// Fill the remaining length with random characters
-	allChars := uppercase + lowercase + numbers + special
 	for i := result.Len(); i < c.TotalLength; i++ {
-		result.WriteByte(allChars[rand.Intn(len(allChars))])
+		result.WriteByte(characterPool.String()[rand.Intn(characterPool.Len())])
 	}
 
 	// Shuffle the string
