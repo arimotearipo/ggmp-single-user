@@ -17,7 +17,7 @@ This password manager allows users to store, retrieve, and manage their password
 - Store passwords securely using AES encryption
 - Retrieve passwords by domain name/URI
 - Add, edit, and delete password entries
-- Generate strong, unique passwords (coming soon)
+- Generate strong, unique passwords
 
 ## Usage
 
@@ -63,15 +63,15 @@ go get modernc.org/sqlite
 
 Here's a step-by-step demo of how to use Go-Get-My-Password:
 
-### Creating Master Account
+### Creating master account
 
 ![Create master account](demo_images/ggmp_master_register.png)
 
-### Login Screen
+### Login screen
 
 ![Login Screen](demo_images/ggmp_master_login.png)
 
-### Post Login Screen
+### Post login screen
 
 ![Passwords menu screen (post login)](demo_images/ggmp_pw_menu.png)
 
@@ -79,7 +79,7 @@ Here's a step-by-step demo of how to use Go-Get-My-Password:
 
 ![Main Menu](demo_images/ggmp_main_menu.png)
 
-### Adding a New Password
+### Adding a new psasword
 
 ![Adding a New Password](demo_images/ggmp_save_login.png)
 
@@ -87,9 +87,13 @@ Here's a step-by-step demo of how to use Go-Get-My-Password:
 
 ![Listing saved logins](demo_images/ggmp_list_login.png)
 
-### Viewing Passwords
+### Viewing passwords
 
 ![Viewing Passwords](demo_images/ggmp_get_password.png)
+
+### Generating password
+
+![Viewing Passwords](demo_images/ggmp_pw_generator.png)
 
 ## Contributing
 
