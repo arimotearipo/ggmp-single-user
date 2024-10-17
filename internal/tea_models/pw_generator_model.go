@@ -1,35 +1,47 @@
 package teamodels
 
 import (
+	"strconv"
+
 	"github.com/arimotearipo/ggmp/internal/action"
+	"github.com/arimotearipo/ggmp/internal/types"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 type PasswordGeneratorModel struct {
 	action          *action.Action
-	uppercaseLength textinput.Model
-	lowercaseLength textinput.Model
-	specialLength   textinput.Model
-	numericLength   textinput.Model
+	uppercaseLength numberinput
+	lowercaseLength numberinput
+	specialLength   numberinput
+	numericLength   numberinput
+	totalLength     numberinput
 	menuItems       []string
 	menuIdx         int
 	result          string
 }
 
 func NewPasswordGeneratorModel(a *action.Action) *PasswordGeneratorModel {
-	uppercaseLengthInput := textinput.New()
-	uppercaseLengthInput.Placeholder = "Enter a number"
+
+	uppercaseLengthInput := NewNumberInput()
+	uppercaseLengthInput.SetValue("3")
 	uppercaseLengthInput.Focus()
 
-	lowercaseLengthInput := textinput.New()
+	lowercaseLengthInput := NewNumberInput()
+	lowercaseLengthInput.SetValue("3")
 	lowercaseLengthInput.Placeholder = "Enter a number"
 
-	specialLengthInput := textinput.New()
+	specialLengthInput := NewNumberInput()
+	specialLengthInput.SetValue("1")
 	specialLengthInput.Placeholder = "Enter a number"
 
-	numericLengthInput := textinput.New()
+	numericLengthInput := NewNumberInput()
+	numericLengthInput.SetValue(("1"))
 	numericLengthInput.Placeholder = "Enter a number"
+
+	totalLengthInput := NewNumberInput()
+	totalLengthInput.SetValue("8")
+	totalLengthInput.Placeholder = "Enter a number"
 
 	return &PasswordGeneratorModel{
 		action:          a,
@@ -37,10 +49,79 @@ func NewPasswordGeneratorModel(a *action.Action) *PasswordGeneratorModel {
 		lowercaseLength: lowercaseLengthInput,
 		specialLength:   specialLengthInput,
 		numericLength:   numericLengthInput,
-		menuItems:       []string{"Uppercase", "Lowercase", "Special characters", "Numeric characters", "GENERATE", "BACK"},
+		totalLength:     totalLengthInput,
+		menuItems:       []string{"Uppercase", "Lowercase", "Special characters", "Numeric characters", "Total length", "GENERATE", "BACK"},
 		menuIdx:         0,
 		result:          "",
 	}
+}
+
+func (m *PasswordGeneratorModel) currentInput() *numberinput {
+	switch m.menuIdx {
+	case 0:
+		return &m.uppercaseLength
+	case 1:
+		return &m.lowercaseLength
+	case 2:
+		return &m.specialLength
+	case 3:
+		return &m.numericLength
+	case 4:
+		return &m.totalLength
+	default:
+		return nil
+	}
+}
+
+func (m *PasswordGeneratorModel) calibrateTotalLength() {
+	sum := m.lowercaseLength.IntValue() + m.uppercaseLength.IntValue() + m.specialLength.IntValue() + m.numericLength.IntValue()
+
+	if m.totalLength.IntValue() < sum {
+		sumStr := strconv.Itoa(sum)
+		m.totalLength.SetValue(sumStr)
+	}
+}
+
+func (m *PasswordGeneratorModel) increment() {
+	curr := m.currentInput()
+
+	if curr == nil {
+		return
+	}
+
+	if curr.Value() == "" {
+		curr.SetValue("0")
+	}
+
+	currentValue, err := strconv.Atoi(curr.Value())
+	if err != nil {
+		return
+	}
+
+	curr.SetValue(strconv.Itoa(currentValue + 1))
+}
+
+func (m *PasswordGeneratorModel) decrement() {
+	curr := m.currentInput()
+
+	if curr == nil {
+		return
+	}
+
+	if curr.Value() == "" {
+		curr.SetValue("0")
+	}
+
+	if curr.Value() == "0" {
+		return
+	}
+
+	currentValue, err := strconv.Atoi(curr.Value())
+	if err != nil {
+		return
+	}
+
+	curr.SetValue(strconv.Itoa(currentValue - 1))
 }
 
 func (m *PasswordGeneratorModel) blurAllInputs() {
@@ -48,6 +129,7 @@ func (m *PasswordGeneratorModel) blurAllInputs() {
 	m.lowercaseLength.Blur()
 	m.specialLength.Blur()
 	m.numericLength.Blur()
+	m.totalLength.Blur()
 }
 
 func (m *PasswordGeneratorModel) Init() tea.Cmd {
@@ -70,42 +152,41 @@ func (m *PasswordGeneratorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 			m.blurAllInputs()
-			selected := m.menuItems[m.menuIdx]
-			switch selected {
-			case "Uppercase":
-				m.uppercaseLength.Focus()
-			case "Lowercase":
-				m.lowercaseLength.Focus()
-			case "Special characters":
-				m.specialLength.Focus()
-			case "Numeric characters":
-				m.numericLength.Focus()
-			default:
-				m.blurAllInputs()
+			curr := m.currentInput()
+			if curr != nil {
+				curr.Focus()
 			}
 		case "left", "right":
-			// TODO: find an efficient way to handle shifting values by left/right keys
+			if msg.String() == "left" {
+				m.decrement()
+			} else if msg.String() == "right" {
+				m.increment()
+			}
 		case "enter":
 			selected := m.menuItems[m.menuIdx]
 			if selected == "GENERATE" {
-				// TODO: generate keys logic
+				pw, err := m.action.GeneratePassword(types.PasswordGeneratorConfig{
+					UppercaseLength: m.uppercaseLength.IntValue(),
+					LowercaseLength: m.lowercaseLength.IntValue(),
+					SpecialLength:   m.specialLength.IntValue(),
+					NumericLength:   m.numericLength.IntValue(),
+					TotalLength:     m.totalLength.IntValue(),
+				})
+
+				if err != nil {
+					m.result = err.Error()
+				} else {
+					m.result = pw
+				}
+
 			} else if selected == "BACK" {
 				return NewAuthMenuModel(m.action), nil
 			}
 		}
 	}
 
-	selected := m.menuItems[m.menuIdx]
-	switch selected {
-	case "Uppercase":
-		m.uppercaseLength, cmd = m.uppercaseLength.Update(msg)
-	case "Lowercase":
-		m.lowercaseLength, cmd = m.lowercaseLength.Update(msg)
-	case "Special characters":
-		m.specialLength, cmd = m.specialLength.Update(msg)
-	case "Numeric characters":
-		m.numericLength, cmd = m.numericLength.Update(msg)
-	}
+	m.calibrateTotalLength()
+	_, cmd = m.currentInput().Update(msg)
 
 	return m, cmd
 }
@@ -128,11 +209,15 @@ func (m *PasswordGeneratorModel) View() string {
 			s += "   " + m.specialLength.View() + "\n"
 		case "Numeric characters":
 			s += "   " + m.numericLength.View() + "\n"
+		case "Total length":
+			s += "   " + m.totalLength.View() + "\n"
 		default:
 			s += "\n"
 		}
 
 	}
+
+	s += m.result
 
 	return s
 }

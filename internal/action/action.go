@@ -1,6 +1,11 @@
 package action
 
 import (
+	"errors"
+	"fmt"
+	"math/rand"
+	"strings"
+
 	"github.com/arimotearipo/ggmp/internal/database"
 	"github.com/arimotearipo/ggmp/internal/encryption"
 	"github.com/arimotearipo/ggmp/internal/types"
@@ -208,4 +213,50 @@ func (a *Action) UpdateMasterPassword(newMasterPassword string) error {
 
 	a.sess.masterKey = newMasterKey
 	return nil
+}
+
+const (
+	uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	lowercase = "abcdefghijklmnopqrstuvwxyz"
+	numbers   = "0123456789"
+	special   = "!@#$%^&*()"
+)
+
+func (a *Action) GeneratePassword(c types.PasswordGeneratorConfig) (string, error) {
+	sum := c.LowercaseLength + c.UppercaseLength + c.NumericLength + c.SpecialLength
+
+	if sum > c.TotalLength {
+		e := fmt.Sprintf("total length should not be less than %d", sum)
+		return "", errors.New(e)
+	}
+
+	var result strings.Builder
+
+	// Generate minimum required characters
+	for i := 0; i < c.UppercaseLength; i++ {
+		result.WriteByte(uppercase[rand.Intn(len(uppercase))])
+	}
+	for i := 0; i < c.LowercaseLength; i++ {
+		result.WriteByte(lowercase[rand.Intn(len(lowercase))])
+	}
+	for i := 0; i < c.SpecialLength; i++ {
+		result.WriteByte(special[rand.Intn(len(special))])
+	}
+	for i := 0; i < c.NumericLength; i++ {
+		result.WriteByte(numbers[rand.Intn(len(numbers))])
+	}
+
+	// Fill the remaining length with random characters
+	allChars := uppercase + lowercase + numbers + special
+	for i := result.Len(); i < c.TotalLength; i++ {
+		result.WriteByte(allChars[rand.Intn(len(allChars))])
+	}
+
+	// Shuffle the string
+	resultRunes := []rune(result.String())
+	rand.Shuffle(len(resultRunes), func(i, j int) {
+		resultRunes[i], resultRunes[j] = resultRunes[j], resultRunes[i]
+	})
+
+	return string(resultRunes), nil
 }
