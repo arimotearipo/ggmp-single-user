@@ -192,7 +192,7 @@ func (m *PasswordGeneratorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *PasswordGeneratorModel) View() string {
-	s := ""
+	s := "Set the minimum length for each type of characters\n"
 	for i, item := range m.menuItems {
 		if i == m.menuIdx {
 			s += "👉 " + item

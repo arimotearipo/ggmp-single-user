@@ -248,18 +248,23 @@ func (a *Action) GeneratePassword(c types.PasswordGeneratorConfig) (string, erro
 		characterPool.WriteString(lowercase)
 	}
 
-	if c.NumericLength > 0 {
+	if c.SpecialLength > 0 {
 		for i := 0; i < c.SpecialLength; i++ {
 			result.WriteByte(special[rand.Intn(len(special))])
+		}
+		characterPool.WriteString(special)
+	}
+
+	if c.NumericLength > 0 {
+		for i := 0; i < c.NumericLength; i++ {
+			result.WriteByte(numbers[rand.Intn(len(numbers))])
 		}
 		characterPool.WriteString(numbers)
 	}
 
-	if c.SpecialLength > 0 {
-		for i := 0; i < c.NumericLength; i++ {
-			result.WriteByte(numbers[rand.Intn(len(numbers))])
-		}
-		characterPool.WriteString(special)
+	// at this point, if result, user has set all config values to 0
+	if result.Len() == 0 {
+		return "", errors.New("no characters generated")
 	}
 
 	// Fill the remaining length with random characters
