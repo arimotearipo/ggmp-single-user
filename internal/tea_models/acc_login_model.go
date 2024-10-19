@@ -10,32 +10,26 @@ type AccountLoginModel struct {
 	action    *action.Action
 	menuIdx   int
 	menuItems []string
-	username  textinput.Model
 	password  textinput.Model
 	result    string
 }
 
 func NewAccountLoginModel(a *action.Action) *AccountLoginModel {
-	usernameInput := textinput.New()
-	usernameInput.Placeholder = "Enter username"
-	usernameInput.Focus()
-
 	passwordInput := textinput.New()
 	passwordInput.Placeholder = "Enter master password"
 	passwordInput.EchoMode = textinput.EchoPassword
+	passwordInput.Focus()
 
 	return &AccountLoginModel{
 		action:    a,
-		menuItems: []string{"Username", "Password", "SUBMIT", "BACK"},
+		menuItems: []string{"Master Password", "SUBMIT", "BACK"},
 		menuIdx:   0,
-		username:  usernameInput,
 		password:  passwordInput,
 		result:    "",
 	}
 }
 
 func (m *AccountLoginModel) blurAllInputs() {
-	m.username.Blur()
 	m.password.Blur()
 }
 
@@ -60,8 +54,6 @@ func (m *AccountLoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			m.blurAllInputs()
 			if m.menuIdx == 0 {
-				m.username.Focus()
-			} else if m.menuIdx == 1 {
 				m.password.Focus()
 			}
 		case "enter":
@@ -70,7 +62,7 @@ func (m *AccountLoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "BACK":
 				return NewAuthMenuModel(m.action), nil
 			case "SUBMIT":
-				if err := m.action.Login(m.username.Value(), m.password.Value()); err != nil {
+				if err := m.action.Login(m.password.Value()); err != nil {
 					m.result = err.Error()
 					return m, nil
 				}
@@ -81,8 +73,6 @@ func (m *AccountLoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	if m.menuIdx == 0 {
-		m.username, cmd = m.username.Update(msg)
-	} else if m.menuIdx == 1 {
 		m.password, cmd = m.password.Update(msg)
 	}
 
@@ -97,9 +87,7 @@ func (m *AccountLoginModel) View() string {
 		} else {
 			s += "   "
 		}
-		if item == "Username" {
-			s += m.username.View() + "\n"
-		} else if item == "Password" {
+		if item == "Master Password" {
 			s += m.password.View() + "\n"
 		} else {
 			s += item + "\n"

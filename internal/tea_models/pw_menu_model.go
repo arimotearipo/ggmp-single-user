@@ -17,7 +17,7 @@ func NewPasswordMenuModel(a *action.Action) *PasswordMenuModel {
 	return &PasswordMenuModel{
 		action:    a,
 		menuIdx:   0,
-		menuItems: []string{"Get password", "Add password", "Update password", "Delete password", "Change master password", "LOGOUT"},
+		menuItems: []string{"Get password", "Add password", "Update password", "Delete password", "Change master password", "Delete master account", "Encrypt password file", "LOGOUT"},
 		result:    "",
 	}
 }
@@ -57,6 +57,11 @@ func (m *PasswordMenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return NewAuthMenuModel(m.action), nil
 			case "Change master password":
 				return NewAccountChangeMasterPasswordModel(m.action), nil
+			case "Delete master account":
+				return NewConfirmDeleteAccountModel(m.action), nil
+			case "Encrypt password file":
+				// TODO: model for encrypt password file
+				return m, nil
 			default:
 				return m.handleSelection(), nil
 			}

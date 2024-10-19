@@ -12,14 +12,12 @@ type AccountRegisterModel struct {
 	action          *action.Action
 	menuIdx         int
 	menuItems       []string
-	username        textinput.Model
 	password        textinput.Model
 	confirmPassword textinput.Model
 	result          string
 }
 
 func (m *AccountRegisterModel) blurAllInputs() {
-	m.username.Blur()
 	m.password.Blur()
 	m.confirmPassword.Blur()
 }
@@ -31,24 +29,20 @@ func (m *AccountRegisterModel) validatePasswords() error {
 	return nil
 }
 
-func NewAccountRegisterModel(c *action.Action) *AccountRegisterModel {
-	usernameInput := textinput.New()
-	usernameInput.Placeholder = "Enter username"
-	usernameInput.Focus()
-
+func NewAccountRegisterModel(a *action.Action) *AccountRegisterModel {
 	passwordInput := textinput.New()
 	passwordInput.Placeholder = "Enter master password"
 	passwordInput.EchoMode = textinput.EchoPassword
+	passwordInput.Focus()
 
 	confirmPasswordInput := textinput.New()
 	confirmPasswordInput.Placeholder = "Confirm master password"
 	confirmPasswordInput.EchoMode = textinput.EchoPassword
 
 	m := &AccountRegisterModel{
-		action:          c,
+		action:          a,
 		menuIdx:         0,
-		menuItems:       []string{"Username", "Password", "Confirm Password", "SUBMIT", "BACK"},
-		username:        usernameInput,
+		menuItems:       []string{"Password", "Confirm Password", "SUBMIT", "BACK"},
 		password:        passwordInput,
 		confirmPassword: confirmPasswordInput,
 		result:          "",
@@ -85,10 +79,8 @@ func (m *AccountRegisterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			m.blurAllInputs()
 			if m.menuIdx == 0 {
-				m.username.Focus()
-			} else if m.menuIdx == 1 {
 				m.password.Focus()
-			} else if m.menuIdx == 2 {
+			} else if m.menuIdx == 1 {
 				m.confirmPassword.Focus()
 			}
 		case "enter":
@@ -101,10 +93,10 @@ func (m *AccountRegisterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.result = err.Error()
 					return m, nil
 				} else {
-					m.result = ""
+					m.result = "Master password set"
 				}
 
-				if err := m.action.Register(m.username.Value(), m.password.Value()); err != nil {
+				if err := m.action.Register(m.password.Value()); err != nil {
 					m.result = err.Error()
 					return m, nil
 				}
@@ -116,8 +108,6 @@ func (m *AccountRegisterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	selected := m.menuItems[m.menuIdx]
 	switch selected {
-	case "Username":
-		m.username, cmd = m.username.Update(msg)
 	case "Password":
 		m.password, cmd = m.password.Update(msg)
 	case "Confirm Password":
@@ -136,8 +126,6 @@ func (m *AccountRegisterModel) View() string {
 		}
 
 		switch item {
-		case "Username":
-			s += m.username.View() + "\n"
 		case "Password":
 			s += m.password.View() + "\n"
 		case "Confirm Password":
