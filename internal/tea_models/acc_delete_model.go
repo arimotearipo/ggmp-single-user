@@ -43,7 +43,7 @@ func (m *ConfirmDeleteAccountModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 			if selected == "YES" {
-				// TODO: encrypt file
+				// TODO: encrypt file action
 			}
 			return NewAccountDeleteModel(m.action), nil
 		}
