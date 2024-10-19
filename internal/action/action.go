@@ -9,6 +9,7 @@ import (
 	"github.com/arimotearipo/ggmp/internal/database"
 	"github.com/arimotearipo/ggmp/internal/encryption"
 	"github.com/arimotearipo/ggmp/internal/types"
+	"github.com/arimotearipo/ggmp/internal/utils"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -53,6 +54,8 @@ func (a *Action) GetPassword(selectedUri types.URI) (username string, password s
 	if err != nil {
 		return "", "", err
 	}
+
+	utils.ClipboardWriteAndErase(password, 15)
 
 	return username, password, nil
 }
@@ -278,5 +281,9 @@ func (a *Action) GeneratePassword(c types.PasswordGeneratorConfig) (string, erro
 		resultRunes[i], resultRunes[j] = resultRunes[j], resultRunes[i]
 	})
 
-	return string(resultRunes), nil
+	generatedPassword := string(resultRunes)
+
+	utils.ClipboardWriteAndErase(generatedPassword, 15)
+
+	return generatedPassword, nil
 }

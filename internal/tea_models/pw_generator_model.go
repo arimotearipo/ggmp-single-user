@@ -178,7 +178,6 @@ func (m *PasswordGeneratorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				} else {
 					m.result = pw
 				}
-
 			} else if selected == "BACK" {
 				return NewAuthMenuModel(m.action), nil
 			}
