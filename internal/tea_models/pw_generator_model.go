@@ -185,7 +185,10 @@ func (m *PasswordGeneratorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	m.calibrateTotalLength()
-	_, cmd = m.currentInput().Update(msg)
+	curr := m.currentInput()
+	if curr != nil {
+		_, cmd = m.currentInput().Update(msg)
+	}
 
 	return m, cmd
 }
