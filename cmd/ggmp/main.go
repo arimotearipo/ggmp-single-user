@@ -1,10 +1,15 @@
 package main
 
 import (
+	"errors"
+	"flag"
 	"fmt"
+	"log"
+	"os"
 
 	"github.com/arimotearipo/ggmp/internal/action"
 	"github.com/arimotearipo/ggmp/internal/database"
+	"github.com/arimotearipo/ggmp/internal/encryption"
 	teamodels "github.com/arimotearipo/ggmp/internal/tea_models"
 	"github.com/arimotearipo/ggmp/internal/utils"
 	tea "github.com/charmbracelet/bubbletea"
@@ -20,9 +25,52 @@ const ggmp string = "\n\n" + `      ::::::::   ::::::::    :::   :::   :::::::::
 
 const gogetmypassword string = "\t\tgo-get-my-password\n\n"
 
-func main() {
+func verifySQLite(databaseFile, secretKey string) error {
+	// check if databaseFile passed is actually a new file location
+	_, err := os.Stat(databaseFile)
+	if err != nil {
+		return nil
+	}
 
-	db := database.NewDatabase("ggmp.db")
+	file, err := os.Open(databaseFile)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	header := make([]byte, 16)
+	_, err = file.Read(header)
+	if err != nil {
+		return err
+	}
+
+	if string(header) != "SQLite format 3\x00" && secretKey == "" {
+		fmt.Println("Not a valid SQLite file")
+		fmt.Println("Maybe it is encrypted? If yes, use the -key flag and pass the secret key")
+		return errors.New("invalid SQLite file")
+
+	}
+
+	key := encryption.DeriveKey([]byte(secretKey), nil)
+	encryption.DecryptFile(databaseFile, key)
+
+	return nil
+}
+
+func main() {
+	databaseFile := flag.String("file", "ggmp.db", "file to store passwords")
+	secretKey := flag.String("key", "", "secret to decrypt database file")
+
+	flag.Parse()
+
+	file := utils.FixExtension(*databaseFile)
+
+	err := verifySQLite(file, *secretKey)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	db := database.NewDatabase(file)
 	defer db.Close()
 
 	a := action.NewAction(db)

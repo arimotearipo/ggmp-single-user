@@ -10,8 +10,9 @@ import (
 )
 
 type Database struct {
-	DB *sql.DB
-	TX *sql.Tx
+	DBFile string
+	DB     *sql.DB
+	TX     *sql.Tx
 }
 
 type SQLExecutor interface {
@@ -76,7 +77,7 @@ func NewDatabase(name string) *Database {
 	statement.Exec()
 	log.Println("Account table created")
 
-	return &Database{DB: DB, TX: nil}
+	return &Database{DBFile: name, DB: DB, TX: nil}
 }
 
 func (db *Database) Close() {

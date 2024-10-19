@@ -285,3 +285,14 @@ func (a *Action) GeneratePassword(c types.PasswordGeneratorConfig) (string, erro
 
 	return generatedPassword, nil
 }
+
+func (a *Action) EncryptDBFile(filePassword string) error {
+	key := encryption.DeriveKey([]byte(filePassword), nil)
+
+	err := encryption.EncryptFile(a.db.DBFile, "", key)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

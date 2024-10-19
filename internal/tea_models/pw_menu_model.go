@@ -60,8 +60,7 @@ func (m *PasswordMenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "Delete master account":
 				return NewConfirmDeleteAccountModel(m.action), nil
 			case "Encrypt password file":
-				// TODO: model for encrypt password file
-				return m, nil
+				return NewEncryptFileModel(m.action), nil
 			default:
 				return m.handleSelection(), nil
 			}
