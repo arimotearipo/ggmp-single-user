@@ -15,7 +15,6 @@ import (
 )
 
 type session struct {
-	username  string
 	masterKey []byte
 	id        int
 }
@@ -94,10 +93,19 @@ func (a *Action) UpdatePassword(uriId int, username, password string) error {
 
 // === MASTER ACCOUNT ===
 
+func (a *Action) CheckMasterAccount() error {
+	err := a.db.CheckMasterAccount()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Will prompt the user for username and password and
 // proceeds to compare the hash and password
-func (a *Action) Login(username, password string) error {
-	id, hashedPassword, salt, err := a.db.GetMasterAccount(username)
+func (a *Action) Login(password string) error {
+	id, hashedPassword, salt, err := a.db.GetMasterAccount()
 	if err != nil {
 		return err
 	}
@@ -109,19 +117,18 @@ func (a *Action) Login(username, password string) error {
 
 	masterKey := encryption.DeriveKey([]byte(password), salt)
 
-	a.sess = &session{username, masterKey, id}
+	a.sess = &session{masterKey, id}
 
 	return nil
 }
 
 func (a *Action) Logout() {
-	a.sess.username = ""
 	a.sess.masterKey = nil
 	a.sess.id = -1
 	a.sess = nil
 }
 
-func (a *Action) Register(username, password string) error {
+func (a *Action) Register(password string) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 12)
 	if err != nil {
 		return err
@@ -129,7 +136,7 @@ func (a *Action) Register(username, password string) error {
 
 	salt, _ := encryption.GenerateSalt()
 
-	err = a.db.AddMasterAccount(username, string(hashedPassword), salt)
+	err = a.db.AddMasterAccount(string(hashedPassword), salt)
 	if err != nil {
 		return err
 	}
@@ -137,26 +144,17 @@ func (a *Action) Register(username, password string) error {
 	return nil
 }
 
-func (a *Action) DeleteMasterAccount(username, password string) error {
-	if err := a.Login(username, password); err != nil {
+func (a *Action) DeleteMasterAccount(password string) error {
+	if err := a.Login(password); err != nil {
 		return err
 	}
 
-	err := a.db.DeleteMasterAccount(username)
+	err := a.db.DeleteMasterAccount()
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func (a *Action) ListMasterAccounts() ([]string, error) {
-	accounts, err := a.db.ListMasterAccounts()
-	if err != nil {
-		return nil, err
-	}
-
-	return accounts, nil
 }
 
 func (a *Action) UpdateMasterPassword(newMasterPassword string) error {

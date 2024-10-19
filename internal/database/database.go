@@ -38,12 +38,20 @@ func NewDatabase(name string) *Database {
 	log.Println("Connected to database")
 
 	// creating master account table
-	createMasterAccountSchema := `CREATE TABLE IF NOT EXISTS master_account (
+	createMasterAccountSchema := `
+	CREATE TABLE IF NOT EXISTS master_account (
 		"id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
-		"username" TEXT UNIQUE,
 		"hashed_password" TEXT(60),
 		"salt" BLOB
-	);`
+	);
+	
+	CREATE TRIGGER IF NOT EXISTS enforce_row_limit_trigger
+	BEFORE INSERT on master_account
+	WHEN (SELECT COUNT(*) FROM master_account) > 1
+	BEGIN
+		SELECT RAISE(ABORT, 'Row limit exceeded');
+	END;
+	`
 	statement, err := DB.Prepare(createMasterAccountSchema)
 	if err != nil {
 		log.Println("err:", err)
@@ -153,14 +161,14 @@ func (db *Database) UpdatePassword(uriId int, username string, encryption string
 	return nil
 }
 
-func (db *Database) AddMasterAccount(username string, hashedPassword string, salt []byte) error {
-	insertMasterAccountQuery := `INSERT INTO master_account (username, hashed_password, salt) VALUES (?, ?, ?);`
+func (db *Database) AddMasterAccount(hashedPassword string, salt []byte) error {
+	insertMasterAccountQuery := `INSERT INTO master_account (hashed_password, salt) VALUES (?, ?);`
 	statement, err := db.executor().Prepare(insertMasterAccountQuery)
 	if err != nil {
 		return err
 	}
 
-	_, err = statement.Exec(username, hashedPassword, salt)
+	_, err = statement.Exec(hashedPassword, salt)
 	if err != nil {
 		return err
 	}
@@ -168,89 +176,61 @@ func (db *Database) AddMasterAccount(username string, hashedPassword string, sal
 	return nil
 }
 
-func (db *Database) GetMasterAccount(username string) (id int, hashedPassword string, salt []byte, err error) {
-	selectMasterAccountQuery := `SELECT COUNT(*) FROM master_account WHERE username = ?;`
+func (db *Database) CheckMasterAccount() error {
+	countMasterAccountQuery := `SELECT COUNT(*) FROM master_account;`
+	statement, err := db.executor().Prepare(countMasterAccountQuery)
+	if err != nil {
+		return err
+	}
+
+	var count int
+	statement.QueryRow().Scan(&count)
+
+	if count != 1 {
+		return errors.New("master account does not exist")
+	}
+
+	return nil
+}
+
+func (db *Database) GetMasterAccount() (id int, hashedPassword string, salt []byte, err error) {
+	err = db.CheckMasterAccount()
+	if err != nil {
+		return -1, "", nil, err
+	}
+
+	selectMasterAccountQuery := `SELECT id, hashed_password, salt FROM master_account;`
 	statement, err := db.executor().Prepare(selectMasterAccountQuery)
 	if err != nil {
 		return -1, "", nil, err
 	}
 
-	var count int
-	statement.QueryRow(username).Scan(&count)
-	if count == 0 {
-		return -1, "", nil, errors.New("username does not exist")
-	}
-
-	selectMasterAccountQuery = `SELECT id, hashed_password, salt FROM master_account WHERE username = ?;`
-	statement, err = db.executor().Prepare(selectMasterAccountQuery)
-	if err != nil {
-		return -1, "", nil, err
-	}
-
-	statement.QueryRow(username).Scan(&id, &hashedPassword, &salt)
+	statement.QueryRow().Scan(&id, &hashedPassword, &salt)
 	return id, hashedPassword, salt, nil
 }
 
-func (db *Database) DeleteMasterAccount(username string) error {
-	deleteLoginsQuery := `DELETE FROM accounts WHERE owner = (SELECT id FROM master_account WHERE username = ?);`
+func (db *Database) DeleteMasterAccount() error {
+	deleteLoginsQuery := `DELETE FROM accounts;`
 	statement, err := db.executor().Prepare(deleteLoginsQuery)
 	if err != nil {
 		return err
 	}
-	_, err = statement.Exec(username)
+	_, err = statement.Exec()
 	if err != nil {
 		return err
 	}
 
-	deleteMasterAccountQuery := `DELETE FROM master_account WHERE username = ?;`
+	deleteMasterAccountQuery := `DELETE FROM master_account;`
 	statement, err = db.executor().Prepare(deleteMasterAccountQuery)
 	if err != nil {
 		return err
 	}
-	_, err = statement.Exec(username)
+	_, err = statement.Exec()
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func (db *Database) ListMasterAccounts() ([]string, error) {
-	selectMasterAccountQuery := `SELECT username FROM master_account;`
-	statement, err := db.executor().Prepare(selectMasterAccountQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	rows, err := statement.Query()
-	if err != nil {
-		return nil, err
-	}
-
-	var usernames []string
-	for rows.Next() {
-		var username string
-		rows.Scan(&username)
-		usernames = append(usernames, username)
-	}
-	return usernames, nil
-}
-
-func (db *Database) GetUserId(username string) (int, error) {
-	query := "SELECT id FROM master_account WHERE username = ?;"
-
-	statement, err := db.executor().Prepare(query)
-	if err != nil {
-		return 0, err
-	}
-
-	var id int
-	err = statement.QueryRow(username).Scan(&id)
-	if err != nil {
-		return 0, err
-	}
-
-	return id, nil
 }
 
 func (db *Database) ChangeMasterPassword(userId int, hashedPassword string, salt []byte) error {

@@ -39,6 +39,19 @@ func NewPasswordAddModel(a *action.Action) *PasswordAddModel {
 	}
 }
 
+func (m *PasswordAddModel) currentInput() *textinput.Model {
+	switch m.menuIdx {
+	case 0:
+		return &m.uri
+	case 1:
+		return &m.username
+	case 2:
+		return &m.password
+	default:
+		return nil
+	}
+}
+
 func (m *PasswordAddModel) blurAllInputs() {
 	m.username.Blur()
 	m.password.Blur()
@@ -65,12 +78,9 @@ func (m *PasswordAddModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 			m.blurAllInputs()
-			if m.menuIdx == 0 {
-				m.uri.Focus()
-			} else if m.menuIdx == 1 {
-				m.username.Focus()
-			} else if m.menuIdx == 2 {
-				m.password.Focus()
+			curr := m.currentInput()
+			if curr != nil {
+				curr.Focus()
 			}
 		case "enter":
 			selected := m.menuItems[m.menuIdx]
@@ -86,14 +96,9 @@ func (m *PasswordAddModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 	}
-	selected := m.menuItems[m.menuIdx]
-	switch selected {
-	case "URI":
-		m.uri, cmd = m.uri.Update(msg)
-	case "Username":
-		m.username, cmd = m.username.Update(msg)
-	case "Password":
-		m.password, cmd = m.password.Update(msg)
+	curr := m.currentInput()
+	if curr != nil {
+		*curr, cmd = m.currentInput().Update(msg)
 	}
 
 	return m, cmd
