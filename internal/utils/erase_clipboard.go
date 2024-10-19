@@ -6,6 +6,9 @@ import (
 	"github.com/atotto/clipboard"
 )
 
+// EraseClipboard clears the clipboard
+// s: string to write to clipboard
+// d: duration to clear clipboard
 func ClipboardWriteAndErase(s string, d time.Duration) error {
 	err := clipboard.WriteAll(s)
 	if err != nil {

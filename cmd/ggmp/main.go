@@ -6,6 +6,7 @@ import (
 	"github.com/arimotearipo/ggmp/internal/action"
 	"github.com/arimotearipo/ggmp/internal/database"
 	teamodels "github.com/arimotearipo/ggmp/internal/tea_models"
+	"github.com/arimotearipo/ggmp/internal/utils"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -35,4 +36,6 @@ func main() {
 	if _, err := programme.Run(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 	}
+
+	defer utils.ClipboardWriteAndErase("", 0) // clear clipboard before programme exits
 }
