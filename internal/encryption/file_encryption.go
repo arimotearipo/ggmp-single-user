@@ -7,12 +7,19 @@ import (
 	"os"
 )
 
-func EncryptFile(filename, newFilename string, key []byte) error {
+func EncryptFile(filename, newFilename string, password []byte) error {
 	// get file content
 	plaintext, err := os.ReadFile(filename)
 	if err != nil {
 		return err
 	}
+
+	salt, err := GenerateSalt()
+	if err != nil {
+		return err
+	}
+
+	key := DeriveKey(password, salt)
 
 	// Generate a new AES cipher using key
 	block, err := aes.NewCipher(key)
@@ -39,17 +46,22 @@ func EncryptFile(filename, newFilename string, key []byte) error {
 		newFilename = "backup_" + filename
 	}
 
-	return os.WriteFile(newFilename, ciphertext, 0644)
+	return os.WriteFile(newFilename, append(salt, ciphertext...), 0644)
 }
 
-func DecryptFile(filename string, key []byte) error {
+func DecryptFile(filename string, secretKey []byte) error {
 	// get encrypted content
-	ciphertext, err := os.ReadFile(filename)
+	saltAndCipher, err := os.ReadFile(filename)
 	if err != nil {
 		return err
 	}
 
-	// generate AES block using key
+	// extract salt and ciphertext
+	salt, ciphertext := saltAndCipher[:16], saltAndCipher[16:]
+
+	key := DeriveKey(secretKey, salt)
+
+	// generate AES block using secret key
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return err
@@ -60,17 +72,20 @@ func DecryptFile(filename string, key []byte) error {
 		return err
 	}
 
-	// Extract the nonce size from GCM and the actual nonce from the ciphertext
-	ivSize := gcm.NonceSize()
-	iv, ciphertext := ciphertext[:ivSize], ciphertext[ivSize:]
-
 	// decrypt data
-	plaintext, err := gcm.Open(nil, iv, ciphertext, nil)
+	nonceSize := gcm.NonceSize()
+	nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
+
+	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
 		return err
 	}
 
 	// rewrite file with decrypted data
 	os.Remove(filename)
-	return os.WriteFile(filename, plaintext, 0644)
+	err = os.WriteFile(filename, plaintext, 0644)
+	if err != nil {
+		return err
+	}
+	return nil
 }

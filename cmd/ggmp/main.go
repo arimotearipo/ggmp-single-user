@@ -4,7 +4,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/arimotearipo/ggmp/internal/action"
@@ -25,7 +24,7 @@ const ggmp string = "\n\n" + `      ::::::::   ::::::::    :::   :::   :::::::::
 
 const gogetmypassword string = "\t\tgo-get-my-password\n\n"
 
-func verifySQLite(databaseFile, secretKey string) error {
+func verifySQLite(databaseFile string) error {
 	// check if databaseFile passed is actually a new file location
 	_, err := os.Stat(databaseFile)
 	if err != nil {
@@ -44,17 +43,22 @@ func verifySQLite(databaseFile, secretKey string) error {
 		return err
 	}
 
-	if string(header) != "SQLite format 3\x00" && secretKey == "" {
-		fmt.Println("Not a valid SQLite file")
-		fmt.Println("Maybe it is encrypted? If yes, use the -key flag and pass the secret key")
+	if string(header) != "SQLite format 3\x00" {
 		return errors.New("invalid SQLite file")
-
 	}
 
-	key := encryption.DeriveKey([]byte(secretKey), nil)
-	encryption.DecryptFile(databaseFile, key)
-
 	return nil
+}
+
+func decryptFile(databaseFile string, secretKey string) {
+	if secretKey == "" {
+		panic("Not a valid SQLite file\nMaybe it is encrypted? If yes, use the -key flag and pass the secret key")
+	}
+
+	err := encryption.DecryptFile(databaseFile, []byte(secretKey))
+	if err != nil {
+		panic(err)
+	}
 }
 
 func main() {
@@ -65,9 +69,9 @@ func main() {
 
 	file := utils.FixExtension(*databaseFile)
 
-	err := verifySQLite(file, *secretKey)
+	err := verifySQLite(file)
 	if err != nil {
-		log.Fatal(err.Error())
+		decryptFile(*databaseFile, *secretKey)
 	}
 
 	db := database.NewDatabase(file)
