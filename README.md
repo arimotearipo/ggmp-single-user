@@ -58,26 +58,29 @@ go get modernc.org/sqlite
 - A unique salt is generated for each password, and Argon2 is used for key derivation to protect against brute-force attacks.
 - Users are prompted to enter a master password to access the password manager.
 - The master password is used to derive an encryption key using Argon2, ensuring that the key is unique and secure.
+- The application allows users to encrypt the file that stores all the encrypted passwords. To run the application and decrypt the file, users need to use the -file flag to pass the path to the encrypted file and the -key flag to pass the password to decrypt the file.
+
+### Example
+
+```
+./ggmp -file=./home/myggmpdbfile.db -key=abc123
+```
 
 ## Demo
 
 Here's a step-by-step demo of how to use Go-Get-My-Password:
 
-### Creating master account
+### Creating master password
 
-![Create master account](demo_images/ggmp_master_register.png)
+![Create master password](demo_images/ggmp_create_master_pw_menu.png)
 
-### Login screen
+### Unlock screen (after you've set master password)
 
-![Login Screen](demo_images/ggmp_master_login.png)
+![Unlock screen](demo_images/ggmp_unlock_menu.png)
 
 ### Post login screen
 
-![Passwords menu screen (post login)](demo_images/ggmp_pw_menu.png)
-
-### Main Menu
-
-![Main Menu](demo_images/ggmp_main_menu.png)
+![Passwords menu screen (post unlock)](demo_images/ggmp_pw_menu.png)
 
 ### Adding a new psasword
 
@@ -93,7 +96,11 @@ Here's a step-by-step demo of how to use Go-Get-My-Password:
 
 ### Generating password
 
-![Viewing Passwords](demo_images/ggmp_pw_generator.png)
+![Generating Password](demo_images/ggmp_pw_generator.png)
+
+### Encrypting the database file
+
+![Encrypting file](demo_images/ggmp_encrypt_file.png)
 
 ## Contributing
 
