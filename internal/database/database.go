@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"log"
+	"os"
 
 	"github.com/arimotearipo/ggmp/internal/types"
 	_ "modernc.org/sqlite"
@@ -64,7 +65,6 @@ func NewDatabase(name string) *Database {
 	// create accounts table
 	createAccountsSchema := `CREATE TABLE IF NOT EXISTS accounts (
 		"id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
-		"owner" REFERENCES master_account (id),
 		"uri" TEXT,
 		"username" TEXT,
 		"encryption" TEXT
@@ -84,26 +84,42 @@ func (db *Database) Close() {
 	db.DB.Close()
 }
 
-func (db *Database) AddPassword(id int, uri, username, encryption string) error {
-	insertAccountQuery := `INSERT INTO accounts (owner, uri, username, encryption) VALUES (?, ?, ?, ?);`
+func (db *Database) RestartConnection() {
+	db.DB.Close()
+	var err error
+
+	os.Chmod(db.DBFile, 0644)
+
+	db.DB, err = sql.Open("sqlite", db.DBFile)
+	if err != nil {
+		log.Fatal("DB connection failed to restart")
+	}
+}
+
+func (db *Database) AddPassword(uri, username, encryption string) error {
+	insertAccountQuery := `INSERT INTO accounts (uri, username, encryption) VALUES (?, ?, ?);`
 	statement, err := db.executor().Prepare(insertAccountQuery)
 	if err != nil {
 		return err
 	}
 
-	statement.Exec(id, uri, username, encryption)
+	_, err = statement.Exec(uri, username, encryption)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (db *Database) GetPassword(uriId int, ownerId int) (username string, encryptedPassword string, err error) {
-	selectAccountQuery := `SELECT username, encryption FROM accounts WHERE id = ? AND owner = ?;`
+func (db *Database) GetPassword(uriId int) (username string, encryptedPassword string, err error) {
+	selectAccountQuery := `SELECT username, encryption FROM accounts WHERE id = ?;`
 	statement, err := db.executor().Prepare(selectAccountQuery)
 
 	if err != nil {
 		return "", "", err
 	}
 
-	err = statement.QueryRow(uriId, ownerId).Scan(&username, &encryptedPassword)
+	err = statement.QueryRow(uriId).Scan(&username, &encryptedPassword)
 	if err != nil {
 		return "", "", err
 	}
@@ -112,7 +128,7 @@ func (db *Database) GetPassword(uriId int, ownerId int) (username string, encryp
 }
 
 func (db *Database) ListURIs(id int) ([]types.URI, error) {
-	selectAccountQuery := `SELECT id, uri FROM accounts WHERE owner = ?;`
+	selectAccountQuery := `SELECT id, uri FROM accounts;`
 	statement, err := db.executor().Prepare(selectAccountQuery)
 
 	if err != nil {
@@ -135,14 +151,14 @@ func (db *Database) ListURIs(id int) ([]types.URI, error) {
 }
 
 func (db *Database) DeleteAccount(uriId int, id int) error {
-	deleteAccountQuery := `DELETE FROM accounts WHERE id = ? AND owner = ?;`
+	deleteAccountQuery := `DELETE FROM accounts WHERE id = ?;`
 	statement, err := db.executor().Prepare(deleteAccountQuery)
 
 	if err != nil {
 		return err
 	}
 
-	_, err = statement.Exec(uriId, id)
+	_, err = statement.Exec(uriId)
 	if err != nil {
 		return err
 	}
