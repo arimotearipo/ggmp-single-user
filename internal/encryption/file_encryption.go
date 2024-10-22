@@ -4,10 +4,13 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"errors"
 	"os"
 )
 
-func EncryptFile(filename, newFilename string, password []byte) error {
+const GGMP_HEADER = "GGMP-FILE-ENCRYPTED"
+
+func EncryptFile(filename string, password []byte) error {
 	// get file content
 	plaintext, err := os.ReadFile(filename)
 	if err != nil {
@@ -41,23 +44,26 @@ func EncryptFile(filename, newFilename string, password []byte) error {
 	// encrypt data
 	ciphertext := gcm.Seal(initializationVector, initializationVector, plaintext, nil)
 
-	// write encrypted data to new file
-	if newFilename == "" {
-		newFilename = "backup_" + filename
+	fullContent := append([]byte(GGMP_HEADER), salt...)
+	fullContent = append(fullContent, ciphertext...)
+
+	err = os.Remove(filename)
+	if err != nil {
+		return err
 	}
 
-	return os.WriteFile(newFilename, append(salt, ciphertext...), 0644)
+	return os.WriteFile(filename, fullContent, 0644)
 }
 
 func DecryptFile(filename string, secretKey []byte) error {
 	// get encrypted content
-	saltAndCipher, err := os.ReadFile(filename)
+	content, err := VerifyGGMPFile(filename)
 	if err != nil {
 		return err
 	}
 
 	// extract salt and ciphertext
-	salt, ciphertext := saltAndCipher[:16], saltAndCipher[16:]
+	salt, ciphertext := content[:16], content[16:]
 
 	key := DeriveKey(secretKey, salt)
 
@@ -82,10 +88,40 @@ func DecryptFile(filename string, secretKey []byte) error {
 	}
 
 	// rewrite file with decrypted data
-	os.Remove(filename)
+	err = os.Remove(filename)
+	if err != nil {
+		return err
+	}
+
 	err = os.WriteFile(filename, plaintext, 0644)
 	if err != nil {
 		return err
 	}
+
+	err = os.Chmod(filename, 0644)
+	if err != nil {
+		return err
+	}
+
 	return nil
+}
+
+// To check whether the file is a valid GGMP file
+// If it returns an error, it means the file is not a
+// valid GGMP file
+func VerifyGGMPFile(file string) (content []byte, err error) {
+	content, err = os.ReadFile(file)
+	if err != nil {
+		return nil, err
+	}
+
+	headerLen := len(GGMP_HEADER)
+	if len(content) < headerLen || string(content[:headerLen]) != GGMP_HEADER {
+		return nil, errors.New("file is not a valid GGMP file")
+	}
+
+	content = content[headerLen:]
+
+	return content, nil
+
 }
